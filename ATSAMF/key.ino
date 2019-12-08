@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #include "key.h"
 
@@ -22,7 +22,7 @@ void adjust_cs(byte adjustment)
  * Set up the CW speed as in state.key.speed. This modifies the dot_time and
  * dash_time accordingly.
  */
-void load_cw_speed()
+void load_cw_speed(void)
 {
   state.key.dot_time = 1200u / ((unsigned int) state.key.speed);
   state.key.dash_time = state.key.dot_time * 3;
@@ -33,7 +33,7 @@ void load_cw_speed()
  *
  * @return 0 if inactive, something else if active.
  */
-byte key_active()
+byte key_active(void)
 {
   return (state.key.mode == KEY_STRAIGHT && digitalRead(DOTin) == LOW)
       || (state.key.mode == KEY_IAMBIC &&
@@ -44,7 +44,7 @@ byte key_active()
  * Handles a straight key. Simply calls straight_key_handle_enable() when it is
  * pressed, and straight_key_handle_disable() when it is released.
  */
-void straight_key()
+void straight_key(void)
 {
   if (digitalRead(DOTin) == HIGH)
     return;
@@ -60,7 +60,7 @@ void straight_key()
 /**
  * The ISR for the keyer. Should be called every 1ms, to ensure proper timing.
  */
-void key_isr()
+void key_isr(void)
 {
   if (state.key.timer > 0)
     if (--state.key.timer == 0)
@@ -72,7 +72,7 @@ void key_isr()
  * timing. What actually happens is defined by key_handle_dash(),
  * key_handle_dot() and key_handle_dashdot_end(), depending on the state.
  */
-void iambic_key()
+void iambic_key(void)
 {
   byte repeat = 1;
 
@@ -115,7 +115,7 @@ void iambic_key()
  * actually happens is defined by key_handle_dash() and
  * key_handle_dashdot_end(), depending on the current state.
  */
-void dash()
+void dash(void)
 {
   key_handle_dash();
   state.key.dash = 0;
@@ -134,7 +134,7 @@ void dash()
 /**
  * Wait for a key timeout and update the dot status.
  */
-void wait_check_dot()
+void wait_check_dot(void)
 {
   do {
     if (digitalRead(DOTin) == LOW)
@@ -148,7 +148,7 @@ void wait_check_dot()
  * actually happens is defined by key_handle_dot() and
  * key_handle_dashdot_end(), depending on the current state.
  */
-void dot()
+void dot(void)
 {
   key_handle_dot();
   state.key.dot = 0;
@@ -167,7 +167,7 @@ void dot()
 /**
  * Wait for a key timeout and update the dash status.
  */
-void wait_check_dash()
+void wait_check_dash(void)
 {
   do {
     if (digitalRead(DASHin) == LOW)

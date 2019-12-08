@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #include "bands.h"
 
@@ -25,7 +25,7 @@ void nextband(byte up)
 /**
  * Update frequencies after a band change.
  */
-void setup_band()
+void setup_band(void)
 {
   state.op_freq = BAND_OP_FREQS[state.band];
   invalidate_frequencies();
@@ -34,7 +34,7 @@ void setup_band()
 /**
  * Store the current band in the EEPROM.
  */
-void store_band()
+void store_band(void)
 {
   EEPROM.write(EEPROM_BAND, (byte) state.band);
 }

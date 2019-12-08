@@ -1,9 +1,9 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #ifndef _H_KEY
 #define _H_KEY
 
-#include "SODA_POP.h"
+#include "ATSAMF.h"
 
 #define KEY_IAMBIC 0
 #define KEY_STRAIGHT 1
@@ -18,6 +18,13 @@ struct key_state {
   unsigned int dash_time;
   unsigned int timer;
 };
+
+void adjust_cs(byte);
+void load_cw_speed(void);
+byte key_active(void);
+void straight_key(void);
+void key_isr(void);
+void iambic_key(void);
 
 #endif
 

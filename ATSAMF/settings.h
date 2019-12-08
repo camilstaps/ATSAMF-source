@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 /* Customisable settings. For more details, see README.md. */
 #define WPM_DEFAULT          20 /* Initial paddle speed in WPM */
@@ -14,9 +14,9 @@
 #define BEACON_INTERVAL      15 /* Interval of TXs in number of dot-times */
 
 /* The tuning steps (rotated through with the encoder button) in mHz (max 8) */
-#define TUNING_STEPS       {5000,       20000,   100000,  1000000}
+#define TUNING_STEPS       {1000,       10000,      100000,      1000000}
 /* Which digit to blink for each of these tuning steps */
-#define TUNING_STEP_DIGITS {BLINK_NONE, BLINK_0, BLINK_1, BLINK_2}
+#define TUNING_STEP_DIGITS {BLINK_NONE, BLINK_10HZ, BLINK_100HZ, BLINK_1KHZ}
 
 /* The band plan. Should be one of the following:
  * - PLAN_IARU1
@@ -35,32 +35,10 @@
 
 /* Custom features. For more details, see README.md. */
 
-/* Hide leading zeroes on the frequency display */
-#define OPT_HIDE_LEADING_ZEROES
-
-/* Band selection by pressing RIT for 2s */
-#define OPT_BAND_SELECT
-
-/* Autoband selection based on plugged in module with PCA9536 PIO */
-//#define OPT_AUTO_BAND
-
 /* Erase EEPROM by pressing RIT for 8s */
 #define OPT_ERASE_EEPROM
 
-/* Store CW speed in EEPROM */
-#define OPT_STORE_CW_SPEED
-
-/* Direct frequency entry by holding encoder for 2s */
-#define OPT_DFE
-
-/* Disable display when idle */
-//#define OPT_DISABLE_DISPLAY
-#define DISABLE_DISPLAY_AFTER 2500 /* Time to disable display after, in ms */
-
-/* More message memories. Select using the rotary encoder. */
-#define OPT_MORE_MEMORIES
-
 /* Obscure CW number abbrevations in DFE and more memories mode */
-//#define OPT_OBSCURE_MORSE_ABBREVIATIONS
+#define OPT_OBSCURE_MORSE_ABBREVIATIONS
 
 // vim: tabstop=2 shiftwidth=2 expandtab:

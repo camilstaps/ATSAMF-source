@@ -1,9 +1,9 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #ifndef _H_MORSE
 #define _H_MORSE
 
-#include "SODA_POP.h"
+#include "ATSAMF.h"
 
 #define MA 0b101    // A
 #define MB 0b11000  // B
@@ -45,9 +45,7 @@
 
 #define Mquestion 0b1001100 // ?
 
-#ifdef OPT_MORE_MEMORIES
-const byte MORSE_DIGITS[] = {M0,M1,M2,M3,M4,M5,M6,M7,M8,M9};
-#endif
+extern const byte MORSE_DIGITS[];
 
 #endif
 

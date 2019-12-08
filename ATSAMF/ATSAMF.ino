@@ -1,8 +1,9 @@
 /**
- * Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl>
+ * Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl>
  *
- * This code is based on The original software by Steven Weber, which was:
- * Copyright (C) 2017 Steven Weber KD1JV <steve.kd1jv@gmail.com>.
+ * This code is based on the original software for the SODA POP by Steven
+ * Weber, which was copyright (C) 2017 Steven Weber KD1JV
+ * <steve.kd1jv@gmail.com>.
  *
  ****************************************************************************
  *
@@ -18,30 +19,27 @@
  *
  *****************************************************************************
  *
- * This is software for the SODA POP rig. Fore more information, see the
+ * This is software for the ATSAMF rig. Fore more information, see the
  * README.md file.
  *
  * In order to compile, <Si5351Arduino-master> must be in the Arduino libary.
  * This library is available from http://www.etherkit.com.
  *
  * Pin functions:
- * A0 - dot paddle
- * A1 - dash paddle
- * A2 - tone
- * A3 - mute/qsk
- * A4 - SDA TWI
- * A5 - SCK TWI
- * 13 - TX enable
+ *  A0 - tone
+ *  A1 - mute/qsk
+ *  A2 - dash paddle
+ *  A3 - dot paddle
+ *  A4 - SDA TWI
+ *  A5 - SCK TWI
+ * D13 - TX enable
  *
  * Switch input bits locations:
  * 0 Encoder A
  * 1 Encoder B
- * 2 Encoder button
- * 3 Unused
- * 4 Unused
- * 5 Unused
- * 6 Keyer button
- * 7 RIT
+ * 3 Encoder button
+ * 4 RIT
+ * 5 Keyer button
  */
 
 #include <EEPROM.h>
@@ -51,13 +49,7 @@
 
 #include <si5351.h>
 
-#include "SODA_POP.h"
-
-Si5351 si5351;
-#define SLED4 9
-#define SLED3 10
-#define SLED2 11
-#define SLED1 12
+#include "ATSAMF.h"
 
 #define SI5351_CLK_RX SI5351_CLK0
 #define SI5351_CLK_TX SI5351_CLK1
@@ -69,16 +61,30 @@ Si5351 si5351;
 
 #define IF_DEFAULT 491480000ul
 
-byte memory_pointer;
-byte errno; // Global error number for S_ERROR
+/* Global variables */
+struct atsamf state;
+volatile unsigned long tcount = 0;
+const byte tuning_blinks[] = TUNING_STEP_DIGITS;
+byte errno;
 
-const int MUTE = A3;
-const int TXEN = 13; // production A0
-const int DASHin = A0;
-const int DOTin = A1;
+byte memory_index;
+char buffer[MEMORY_LENGTH];
+
+byte dfe_position;
+unsigned long dfe_freq;
+
+/* Local variables */
+Si5351 si5351;
+long cal_value = 15000;
 
 unsigned long IFfreq;
-long cal_value = 15000;
+
+const long tuning_steps[] = TUNING_STEPS;
+
+byte memory_index_character;
+byte memory_pointer;
+
+byte dfe_character;
 
 /**
  * The Timer1 ISR. Keeps track of a global timer, tcount, and calls ISRs for
@@ -88,14 +94,8 @@ long cal_value = 15000;
 ISR (TIMER1_COMPA_vect)
 {
   ++tcount;
-#ifdef OPT_DISABLE_DISPLAY
-  if (state.state == S_DEFAULT)
-    state.idle_for++;
-#endif
   key_isr();
-  disable_display();
   buttons_isr();
-  display_isr();
 }
 
 /**
@@ -103,32 +103,32 @@ ISR (TIMER1_COMPA_vect)
  * Sets up the device's state, the Si5351, and loads persistsent settings from
  * the EEPROM.
  */
-void setup()
+void setup(void)
 {
   state.state = S_STARTUP;
 
+  DDRD = 0xc4; /* D0-7 */
+  PORTD = 0x3b; /* pull-ups */
+  DDRB = 0xff; /* D8-13 */
+
+  pinMode(SIDETONE, OUTPUT);
+  pinMode(MUTE, OUTPUT);
+  pinMode(DASHin, INPUT_PULLUP);
+  pinMode(DOTin, INPUT_PULLUP);
+
+  digitalWrite(MUTE, HIGH);
+  digitalWrite(TXEN, LOW);
+  digitalWrite(6, LOW); /* for buttons */
+
+  display_init();
+
   state.key.mode = KEY_IAMBIC;
-#ifdef OPT_STORE_CW_SPEED
   state.key.speed = EEPROM.read(EEPROM_CW_SPEED);
-#else
-  state.key.speed = WPM_DEFAULT;
-#endif
   state.key.timeout = 1;
   state.key.dash = 0;
   state.key.dot = 0;
   load_cw_speed();
 
-  //switch inputs
-  DDRB = 0x3f;
-  DDRD = 0Xff;
-
-  pinMode(A0, INPUT_PULLUP);
-  pinMode(A2, OUTPUT);
-  pinMode(A1, INPUT_PULLUP);
-  pinMode(A3, OUTPUT);
-
-  digitalWrite(MUTE, HIGH);
-  digitalWrite(TXEN, LOW);
   si5351.init(SI5351_CRYSTAL_LOAD_6PF, 0); //set PLL xtal load
   enable_rx_tx(RX_ON_TX_OFF);
 
@@ -142,12 +142,6 @@ void setup()
   TIMSK1 |= 1 << OCIE1A;
   interrupts();
 
-#ifdef OPT_AUTO_BAND
-  state.state = EEPROM.read(EEPROM_BAND) == 0xff
-    ? S_CALIBRATION_CORRECTION
-    : S_DEFAULT;
-  read_module_band();
-#else
   state.band = (enum band) EEPROM.read(EEPROM_BAND);
   if (state.band == BAND_UNKNOWN) {
     state.band = (enum band) 0;
@@ -155,17 +149,18 @@ void setup()
   } else {
     state.state = S_DEFAULT;
   }
-#endif
 
   fetch_calibration_data(); //load calibration data
   si5351.set_correction(cal_value); //correct the clock chip error
   state.tuning_step = 0;
   setup_band();
 
+  display_delay(1500);
+
   if (state.state == S_DEFAULT) {
-    state.state = S_CALIBRATION_CHANGE_BAND; // To show the band on startup
+    state.state = S_STARTUP; // To show the band on startup
     invalidate_display();
-    delay(1000);
+    display_delay(1500);
     state.state = S_DEFAULT;
   } else if (state.state == S_CALIBRATION_CORRECTION) {
     calibration_set_correction();
@@ -178,6 +173,8 @@ void setup()
   if (digitalRead(DASHin) == LOW)
     state.key.mode = KEY_STRAIGHT;
 
+  state.beacon = 0;
+
   power_adc_disable();
   power_spi_disable();
   set_sleep_mode(SLEEP_MODE_IDLE);
@@ -187,18 +184,18 @@ void setup()
  * Arduino's main loop. Checks what state we are in and calls the corresponding
  * loop_* function.
  */
-void loop()
+void loop(void)
 {
+  if (!((uint8_t)tcount & 0x7f))
+    display_isr();
+
   switch (state.state) {
     case S_DEFAULT:                 loop_default(); break;
     case S_KEYING:                  loop_keying(); break;
     case S_ADJUST_CS:               loop_adjust_cs(); break;
-#ifdef OPT_BAND_SELECT
+    case S_TUNE:                    loop_tune(); break;
     case S_CHANGE_BAND:             loop_change_band(); break;
-#endif
-#ifdef OPT_DFE
     case S_DFE:                     loop_dfe(); break;
-#endif
     case S_MEM_ENTER_WAIT:          loop_mem_enter_wait(); break;
     case S_MEM_ENTER:               loop_mem_enter(); break;
     case S_MEM_ENTER_REVIEW:        loop_mem_enter_review(); break;
@@ -214,11 +211,6 @@ void loop()
       break;
   }
 
-#ifdef OPT_DISABLE_DISPLAY
-  if (state.state != S_DEFAULT && state.state != S_KEYING)
-    state.idle_for = -1;
-#endif
-
   sleep_mode();
 }
 
@@ -231,7 +223,7 @@ void loop()
  * Rotary encoder:
  * - Turning adjusts the frequencies in the current step size.
  * - Pressing rotates through tuning step sizes (see tuning_steps).
- * - Holding for 1s enters S_DFE (when compiled with OPT_DFE and using paddle).
+ * - Holding for 1s enters S_DFE.
  *
  * Keyer:
  * - Pressing moves to S_MEM_SEND_WAIT, to transmit a message memory.
@@ -240,42 +232,30 @@ void loop()
  *
  * RIT:
  * - Pressing en/disables RIT.
- * - Holding for 2s moves to S_CHANGE_BAND (compile with OPT_BAND_SELECT).
+ * - Holding for 2s moves to S_CHANGE_BAND.
  * - Holding for 5s enters the calibration routine (S_CALIBRATION_CORRECTION).
  * - Holding for 8s erases the EEPROM settings (compile with OPT_ERASE_EEPROM).
  */
-void loop_default()
+void loop_default(void)
 {
   unsigned int duration;
-
-#ifdef OPT_DISABLE_DISPLAY
-  if (state.idle_for == (unsigned int) -2) // toggle for .5s
-    state.idle_for = DISABLE_DISPLAY_AFTER - 500;
-#endif
-
-#ifdef OPT_AUTO_BAND
-  if (tcount % 5000 == 0) // Check the band module for changes every 5s
-    read_module_band();
-#endif
 
   if (key_active()) {
     state.state = S_KEYING;
   // Tuning with the rotary encoder
   } else if (rotated_up()) {
     freq_adjust(tuning_steps[state.tuning_step]);
-#ifdef OPT_DISABLE_DISPLAY
-    state.idle_for = -1;
-#endif
   } else if (rotated_down()) {
     freq_adjust(-tuning_steps[state.tuning_step]);
-#ifdef OPT_DISABLE_DISPLAY
-    state.idle_for = -1;
-#endif
   } else if (state.inputs.encoder_button) {
     duration = time_encoder_button();
-#ifdef OPT_DFE
     if (duration > 1000) {
       if (state.key.mode == KEY_IAMBIC) {
+        if (state.rit) {
+          state.rit = 0;
+          state.op_freq = state.rit_tx_freq;
+          invalidate_frequencies();
+        }
         state.state = S_DFE;
         dfe_character = 0xff;
         dfe_position = 3;
@@ -284,71 +264,62 @@ void loop_default()
         morse(MX);
       }
       invalidate_display();
-    } else
-#endif
-    if (duration > 50) {
-#ifdef OPT_DISABLE_DISPLAY
-      if (!(state.idle_for >= DISABLE_DISPLAY_AFTER))
-#endif
+    } else if (duration > 50) {
       rotate_tuning_steps();
-#ifdef OPT_DISABLE_DISPLAY
-      state.idle_for = -1;
-#endif
     }
   // Keyer switch for memory and code speed
   } else if (state.inputs.keyer) {
     duration = time_keyer();
-    if (duration > 2000) {
+    if (duration > 5000) {
       state.state = S_MEM_ENTER_WAIT;
       invalidate_display();
-    } else if (duration > 500) {
+    } else if (duration > 2000) {
       state.state = S_ADJUST_CS;
       invalidate_display();
     } else if (duration > 50) {
       state.state = S_MEM_SEND_WAIT;
-#ifdef OPT_MORE_MEMORIES
       memory_index_character = 0xff;
-#endif
       invalidate_display();
     }
   // RIT switch for RIT, changing band, calibration and erasing EEPROM
   } else if (state.inputs.rit) {
     duration = time_rit();
 #ifdef OPT_ERASE_EEPROM
-    if (duration > 8000) {
+    if (duration > 11000) {
       ee_erase();
-      delay(1000);
       invalidate_display();
-#ifdef OPT_DISABLE_DISPLAY
-      state.idle_for = -1;
-#endif
     } else
 #endif
-    if (duration > 5000) {
+    if (duration > 8000) {
       state.state = S_CALIBRATION_CORRECTION;
       invalidate_display();
       calibration_set_correction();
       enable_rx_tx(RX_OFF_TX_ON);
-    }
-#ifdef OPT_BAND_SELECT
-    else if (duration > 2000) {
+    } else if (duration > 5000) {
       state.state = S_CHANGE_BAND;
-      invalidate_display();
-    }
-#endif
-    else if (duration > 50) {
       if (state.rit) {
         state.rit = 0;
         state.op_freq = state.rit_tx_freq;
+        state.tuning_step = 0;
+        invalidate_frequencies();
+      }
+      invalidate_display();
+    } else if (duration > 2000) {
+      state.state = S_TUNE;
+      state.tune_mode_on = 0;
+      invalidate_display();
+    } else if (duration > 50) {
+      if (state.rit) {
+        state.rit = 0;
+        state.op_freq = state.rit_tx_freq;
+        state.tuning_step = 0;
         invalidate_frequencies();
       } else {
         state.rit = 1;
         state.rit_tx_freq = state.op_freq;
+        state.tuning_step = 0;
       }
       invalidate_display();
-#ifdef OPT_DISABLE_DISPLAY
-      state.idle_for = -1;
-#endif
     }
   }
 }
@@ -357,12 +328,13 @@ void loop_default()
  * Loop for the S_KEYING state. In this state, buttons are disabled, and the
  * keying routing for paddle or straight key is called.
  */
-void loop_keying()
+void loop_keying(void)
 {
   if (state.key.mode == KEY_IAMBIC) {
     iambic_key();
   } else if (digitalRead(DOTin) == LOW) {
     straight_key();
+    state.state = S_DEFAULT;
   }
 }
 
@@ -371,7 +343,7 @@ void loop_keying()
  * using the rotary encoder and/or paddle.
  * The keyer switch selects the speed and returns to S_DEFAULT.
  */
-void loop_adjust_cs()
+void loop_adjust_cs(void)
 {
   if (rotated_up()) {
     adjust_cs(1);
@@ -386,12 +358,31 @@ void loop_adjust_cs()
   } else if (state.inputs.keyer) {
     state.state = S_DEFAULT;
     load_cw_speed();
-#ifdef OPT_STORE_CW_SPEED
     store_cw_speed();
-#endif
     invalidate_display();
     debounce_keyer();
   }
+}
+
+/**
+ * Loop for the S_TUNE state. The keyer switch turns transmission on/off. RIT
+ * returns to S_DEFAULT.
+ */
+void loop_tune(void)
+{
+  if (state.inputs.rit) {
+    debounce_rit();
+    straight_key_handle_disable();
+    state.state = S_DEFAULT;
+  } else if (state.inputs.keyer) {
+    debounce_keyer();
+    state.tune_mode_on = ~state.tune_mode_on;
+    if (state.tune_mode_on)
+      straight_key_handle_enable();
+    else
+      straight_key_handle_disable();
+  }
+  invalidate_display();
 }
 
 /**
@@ -400,7 +391,7 @@ void loop_adjust_cs()
  * The keyer switch moves on to S_DEFAULT (when in S_CHANGE_BAND) or
  * S_CALIBRATION_PEAK_RX (when in S_CALIBRATION_CHANGE_BAND).
  */
-void loop_change_band()
+void loop_change_band(void)
 {
   if (rotated_up()) {
     nextband(1);
@@ -422,7 +413,6 @@ void loop_change_band()
   }
 }
 
-#ifdef OPT_DFE
 /**
  * Loop for the S_DFE state for direct frequency entry. In this state, the user
  * can enter a new frequency using the paddle.
@@ -433,7 +423,7 @@ void loop_change_band()
  * The RIT switch cancels the DFE and returns to S_DEFAULT.
  * The keyer switch sets the remaining digits to 0 and returns to S_DEFAULT.
  */
-void loop_dfe()
+void loop_dfe(void)
 {
   if (dfe_character != 0xff) {
     unsigned int add;
@@ -496,15 +486,14 @@ void loop_dfe()
  * The operating frequency is fixed between the band limits.
  * The system returns to S_DEFAULT state.
  */
-void set_dfe()
+void set_dfe(void)
 {
   state.op_freq = (BAND_LIMITS_LOW[state.band] / 10000000) * 10000000;
   state.op_freq += ((unsigned long) dfe_freq) * 10000;
-  fix_op_freq();
+  fix_op_freq(0);
   invalidate_frequencies();
   state.state = S_DEFAULT;
 }
-#endif
 
 /**
  * Loop for the S_MEM_ENTER_WAIT state. In this state, the user can start
@@ -514,7 +503,7 @@ void set_dfe()
  * The keyer switch returns to the S_DEFAULT state.
  * The paddle moves on to the S_MEM_ENTER state.
  */
-void loop_mem_enter_wait()
+void loop_mem_enter_wait(void)
 {
   memory_pointer = 0;
 
@@ -543,7 +532,7 @@ unsigned long quiet_since;
  * When the paddle has not been used for 3 * the dash time, a word break is
  * recorded. No consecutive word breaks are recorded.
  */
-void loop_mem_enter()
+void loop_mem_enter(void)
 {
   if (state.inputs.keyer) {
     state.state = S_MEM_ENTER_REVIEW;
@@ -557,7 +546,7 @@ void loop_mem_enter()
       && buffer[memory_pointer-1] != 0x00) {
     buffer[memory_pointer++] = 0x00;
     buffer[memory_pointer] = 0xff;
-    toggle_display();
+    display_flash_circle(1);
   }
 }
 
@@ -565,14 +554,11 @@ void loop_mem_enter()
  * Loop for the S_MEM_ENTER_REVIEW state. In this state, the user has just
  * heard the memory as he entered it.
  * The RIT switch returns to the S_MEM_ENTER_WAIT state, discarding the entry.
- * Normally, either side of the paddle stores the message in memory (depending
- * on the side of the paddle that was pressed).
- * With OPT_MORE_MEMORIES enabled, one of ten memories can be selected using
- * the rotary encoder: turn to select, then save with the keyer switch.
+ * One of ten memories can be selected using the rotary encoder: turn to
+ * select, then save with the keyer switch.
  */
-void loop_mem_enter_review()
+void loop_mem_enter_review(void)
 {
-#ifdef OPT_MORE_MEMORIES
   if (rotated_up()) {
     memory_index++;
     memory_index %= 10;
@@ -590,27 +576,7 @@ void loop_mem_enter_review()
     state.state = S_DEFAULT;
     invalidate_display();
     debounce_keyer();
-  }
-#else
-  if (digitalRead(DASHin) == LOW) {
-    store_memory(0);
-    morse(MM);
-    morse(M1);
-    state.state = S_DEFAULT;
-    invalidate_display();
-    while (digitalRead(DASHin) == LOW)
-      delay(50);
-  } else if (digitalRead(DOTin) == LOW) {
-    store_memory(1);
-    morse(MM);
-    morse(M2);
-    state.state = S_DEFAULT;
-    invalidate_display();
-    while (digitalRead(DOTin) == LOW)
-      delay(50);
-  }
-#endif
-  else if (state.inputs.rit) {
+  } else if (state.inputs.rit) {
     state.state = S_MEM_ENTER_WAIT;
     memory_pointer = 0;
     invalidate_display();
@@ -623,15 +589,11 @@ void loop_mem_enter_review()
  * memory to send. Picking a memory moves to the S_MEM_SEND_TX state, transmits
  * the memory and returns to S_DEFAULT.  The RIT switch returns to the
  * S_DEFAULT state.
- * Normally, one of two messages can be selected using either side of the
- * paddle. When using a straight key, the device picks the dot-memory
- * automatically.
- * With OPT_MORE_MEMORIES enabled, one of ten memories can be selected using
- * the rotary encoder: turn to select, then transmit with the keyer switch.
+ * One of ten memories can be selected using the rotary encoder: turn to
+ * select, then transmit with the keyer switch.
  */
-void loop_mem_send_wait()
+void loop_mem_send_wait(void)
 {
-#ifdef OPT_MORE_MEMORIES
   if (rotated_up()) {
     memory_index++;
     memory_index %= 10;
@@ -684,20 +646,7 @@ void loop_mem_send_wait()
       invalidate_display();
       memory_index_character = 0xff;
     }
-  }
-#else
-  // Paddle chooses a memory
-  if (!digitalRead(DASHin)) {
-    state.state = S_MEM_SEND_TX;
-    load_memory_for_tx(0);
-    invalidate_display();
-  } else if (!digitalRead(DOTin)) {
-    state.state = S_MEM_SEND_TX;
-    load_memory_for_tx(1);
-    invalidate_display();
-  }
-#endif
-  else if (state.inputs.rit) {
+  } else if (state.inputs.rit) {
     state.state = S_DEFAULT;
     invalidate_display();
     debounce_rit();
@@ -712,7 +661,7 @@ void loop_mem_send_wait()
  * The keyer switch toggles beacon mode on and off. The RIT switch ends any
  * active transmission.
  */
-void loop_mem_send_tx()
+void loop_mem_send_tx(void)
 {
   if (state.inputs.keyer) {
     state.beacon = ~state.beacon;
@@ -728,24 +677,22 @@ void loop_mem_send_tx()
       case 0xff:
         state.mem_tx_index = 0;
         if (!state.beacon) {
-#ifdef OPT_MORE_MEMORIES
           memory_index = 0;
-#endif
           state.state = S_DEFAULT;
           invalidate_display();
         } else {
           for (byte i = 0; i < BEACON_INTERVAL; i++) {
+            display_progress(0, BEACON_INTERVAL - 1, i);
             delay(state.key.dot_time);
             if (state.inputs.keyer || state.inputs.rit) {
               if (state.inputs.keyer)
                 state.beacon = 0;
-#ifdef OPT_MORE_MEMORIES
               memory_index = 0;
-#endif
               state.state = S_DEFAULT;
               invalidate_display();
               debounce_keyer();
               debounce_rit();
+              break;
             }
           }
         }
@@ -769,13 +716,13 @@ void loop_mem_send_tx()
  * sidetone. There is no recovery from this state except for turning off the
  * device.
  */
-void loop_error()
+void loop_error(void)
 {
   for (unsigned int f = 400; f < 1000; f += 10) {
-    tone(A2, f);
+    tone(SIDETONE, f);
     delay(10);
   }
-  noTone(A2);
+  noTone(SIDETONE);
   delay(450);
 }
 
@@ -786,7 +733,7 @@ void loop_error()
  * The keyer switch stores the correction value to EEPROM and moves on to the
  * S_CALIBRATION_PEAK_IF state.
  */
-void loop_calibration_correction()
+void loop_calibration_correction(void)
 {
   if (state.inputs.keyer) {
     EEPROM.write(EEPROM_CAL_VALUE + 0, cal_value);
@@ -816,7 +763,7 @@ void loop_calibration_correction()
  * The keyer switch saves the frequency to the EEPROM and moves on to the
  * S_CALIBRATION_CHANGE_BAND state.
  */
-void loop_calibration_peak_if()
+void loop_calibration_peak_if(void)
 {
   if (state.inputs.keyer) {
     IFfreq = state.op_freq;
@@ -824,13 +771,7 @@ void loop_calibration_peak_if()
     EEPROM.write(EEPROM_IF_FREQ + 1, state.op_freq >> 8);
     EEPROM.write(EEPROM_IF_FREQ + 2, state.op_freq >> 16);
     EEPROM.write(EEPROM_IF_FREQ + 3, state.op_freq >> 24);
- #ifdef OPT_AUTO_BAND
-    EEPROM.write(EEPROM_BAND, 0); // Reset the "not calibrated" flag now that we've written the cal values
-    state.state = S_CALIBRATION_PEAK_RX;
-    enable_rx_tx(RX_ON_TX_ON);
-#else
     state.state = S_CALIBRATION_CHANGE_BAND;
-#endif
     invalidate_frequencies();
     invalidate_display();
 
@@ -851,7 +792,7 @@ void loop_calibration_peak_if()
  * CT1 and CT2 to peak the signal.
  * The keyer switch returns to S_DEFAULT.
  */
-void loop_calibration_peak_rx()
+void loop_calibration_peak_rx(void)
 {
   if (state.inputs.keyer) {
     state.state = S_DEFAULT;
@@ -866,10 +807,10 @@ void loop_calibration_peak_rx()
  * Rotate through the tuning steps. The display is updated.
  * See tuning_steps.
  */
-void rotate_tuning_steps()
+void rotate_tuning_steps(void)
 {
   state.tuning_step++;
-  if (state.tuning_step >= sizeof(tuning_blinks))
+  if (state.tuning_step >= (state.rit ? 2 : sizeof(tuning_blinks)))
     state.tuning_step = 0;
   invalidate_display();
 }
@@ -885,7 +826,7 @@ byte morse_char;
  * reset.
  * Also see key_handle_end();
  */
-void key_handle_start()
+void key_handle_start(void)
 {
   morse_char = 0x01;
 }
@@ -895,7 +836,7 @@ void key_handle_start()
  * disables TX. In MEM_ENTER mode, the detected character is stored.
  * Also see key_handle_start().
  */
-void key_handle_end()
+void key_handle_end(void)
 {
   if (state.state == S_KEYING) {
     state.state = S_DEFAULT;
@@ -906,18 +847,12 @@ void key_handle_end()
     }
     buffer[memory_pointer++] = morse_char;
     buffer[memory_pointer] = 0xff;
-    toggle_display();
-  }
-#ifdef OPT_DFE
-  else if (state.state == S_DFE) {
+    display_flash_circle(0);
+  } else if (state.state == S_DFE) {
     dfe_character = morse_char;
-  }
-#endif
-#ifdef OPT_MORE_MEMORIES
-  else if (state.state == S_MEM_SEND_WAIT) {
+  } else if (state.state == S_MEM_SEND_WAIT) {
     memory_index_character = morse_char;
   }
-#endif
 }
 
 /**
@@ -927,7 +862,7 @@ void key_handle_end()
  * ensure clock is running before DC is applied to the PA.
  * Also see key_handle_dot() and key_handle_dashdot_end().
  */
-void key_handle_dash()
+void key_handle_dash(void)
 {
   digitalWrite(MUTE, HIGH);
   SIDETONE_ENABLE();
@@ -943,7 +878,7 @@ void key_handle_dash()
 /**
  * See key_handle_dash().
  */
-void key_handle_dot()
+void key_handle_dot(void)
 {
   digitalWrite(MUTE, HIGH);
   SIDETONE_ENABLE();
@@ -962,7 +897,7 @@ void key_handle_dot()
  * ensure anti key-click tail is completed.
  * See key_handle_dash() and key_handle_dot().
  */
-void key_handle_dashdot_end()
+void key_handle_dashdot_end(void)
 {
   SIDETONE_DISABLE();
   digitalWrite(TXEN, LOW);
@@ -976,7 +911,7 @@ void key_handle_dashdot_end()
  * so no state checking here (compare to the key_* routines).
  * Also see straight_key_handle_disable().
  */
-void straight_key_handle_enable()
+void straight_key_handle_enable(void)
 {
   SIDETONE_ENABLE();
   digitalWrite(MUTE, HIGH);
@@ -988,21 +923,20 @@ void straight_key_handle_enable()
 /**
  * See straight_key_handle_enable().
  */
-void straight_key_handle_disable()
+void straight_key_handle_disable(void)
 {
   digitalWrite(TXEN, LOW);
   delay(5);
   enable_rx_tx(RX_ON_TX_OFF);
   digitalWrite(MUTE, LOW);
   SIDETONE_DISABLE();
-  state.state = S_DEFAULT;
 }
 
 /**
  * Set the calibratioin of the Si5351 chip and reset the frequency to 10MHz for
  * calibration purposes.
  */
-void calibration_set_correction()
+void calibration_set_correction(void)
 {
   si5351.set_correction(cal_value);
   si5351.set_freq(1000000000, 0ull, SI5351_CLK1);
@@ -1011,7 +945,7 @@ void calibration_set_correction()
 /**
  * Fetch calibration data from EEPROM.
  */
-void fetch_calibration_data()
+void fetch_calibration_data(void)
 {
   IFfreq =                 EEPROM.read(EEPROM_IF_FREQ + 3);
   IFfreq = (IFfreq << 8) + EEPROM.read(EEPROM_IF_FREQ + 2);
@@ -1047,7 +981,7 @@ void enable_rx_tx(byte option)
 void freq_adjust(long step)
 {
   state.op_freq += step;
-  fix_op_freq();
+  fix_op_freq(step);
   invalidate_display();
   invalidate_frequencies();
 }
@@ -1055,7 +989,7 @@ void freq_adjust(long step)
 /**
  * Fix the operating frequency between the band limits.
  */
-void fix_op_freq()
+void fix_op_freq(long step)
 {
 #ifdef PLAN_VK
   if (state.band == BAND_80) {
@@ -1073,6 +1007,13 @@ void fix_op_freq()
     state.op_freq = BAND_LIMITS_HIGH[state.band];
   if (state.op_freq < BAND_LIMITS_LOW[state.band])
     state.op_freq = BAND_LIMITS_LOW[state.band];
+
+  if (state.rit) {
+    /* to prevent the display from overflowing */
+    long diff = state.op_freq - state.rit_tx_freq;
+    if (diff >= 1000000 || diff <= -1000000)
+      state.op_freq -= step;
+  }
 }
 
 /**
@@ -1080,7 +1021,7 @@ void fix_op_freq()
  * function should be called any time something frequency-related happens, s.t.
  * it is not needed in keying routines (to make their response time lower).
  */
-void invalidate_frequencies()
+void invalidate_frequencies(void)
 {
   unsigned long freq;
 
@@ -1106,28 +1047,25 @@ void load_memory_for_tx(byte index)
   state.mem_tx_index = 0;
 }
 
-#ifdef OPT_STORE_CW_SPEED
 /**
  * Store the key speed in EEPROM.
  */
-void store_cw_speed()
+void store_cw_speed(void)
 {
   EEPROM.write(EEPROM_CW_SPEED, state.key.speed);
 }
-#endif
 
 #ifdef OPT_ERASE_EEPROM
 /**
  * Erase settings from EEPROM. This does not clear the message memories.
  */
-void ee_erase()
+void ee_erase(void)
 {
   for (byte i = 0; i <= MEMORY_EEPROM_START; i++)
     EEPROM.write(i, 0xff);
-  state.display.digits[3] = LED_d;
-  state.display.digits[2] = LED_N_0;
-  state.display.digits[1] = LED_n;
-  state.display.digits[0] = LED_E;
+
+  display_feedback("EEPROM erased.");
+  display_delay(1500);
 }
 #endif
 
@@ -1139,75 +1077,7 @@ void error(byte er)
 {
   errno = er;
   state.state = S_ERROR;
-}
-
-#ifdef OPT_AUTO_BAND
-/*
- * Read the input latch of the PCA9536 and return a 4-bit value
- * If the band module can't be read or the value is out of range, display an error and wait for a valid band module
- */
-byte PCA9536_read()
-{
-  byte reg_val;
-  boolean err = true;
-
-  while (err) {
-    Wire.beginTransmission(PCA9536_BUS_ADDR);
-    Wire.write(byte(0x00));       // We read only from register 0, the input latch
-    Wire.endTransmission(false);  // Transmit repeated start rather than stop at end of transmission
-    Wire.requestFrom(PCA9536_BUS_ADDR, 1);
-    if (Wire.available() == 1) {
-      reg_val = Wire.read() & 0x0f;
-      if(reg_val >= 2 && reg_val <= 11) // Module configuration is good
-        err = false;
-    }
-    if (err) {
-      state.display.digits[3] = LED_N_6;
-      state.display.digits[2] = LED_n;
-      state.display.digits[1] = LED_E;
-      state.display.digits[0] = LED_r;
-      state.display.dots = 0x0;
-      delay(500);
-    }
-  }
-
   invalidate_display();
-  return reg_val;
 }
-
-/*
- * Check if the band module has changed and if it has, reset bandlimits and operating frequency
- */
-void read_module_band()
-{
-   enum band new_band;
-
-   switch (PCA9536_read()) { // Map returned value to current band table range
-     case 2:  new_band = BAND_160; break;
-     case 3:  new_band = BAND_80;  break;
-#if defined PLAN_IARU1 || defined PLAN_IARU2
-     case 4:  new_band = BAND_60;  break;
-#endif
-     case 5:  new_band = BAND_40;  break;
-     case 6:  new_band = BAND_30;  break;
-     case 7:  new_band = BAND_20;  break;
-     case 8:  new_band = BAND_17;  break;
-     case 9:  new_band = BAND_15;  break;
-     case 10: new_band = BAND_12;  break;
-     case 11: new_band = BAND_10;  break;
-     default: new_band = BAND_UNKNOWN; error(3); break;
-   }
-
-   if (new_band != state.band) {
-     digitalWrite(MUTE, LOW);  // Make sure we are in receive mode
-     state.band = new_band;
-     setup_band();             // Set the band limits and default
-                               // operating frequency for the selected band
-     display_band();
-     delay(2000);              // Allow time to view the band on the display
-     invalidate_display();
-   }
-}
-#endif
 
 // vim: tabstop=2 shiftwidth=2 expandtab:

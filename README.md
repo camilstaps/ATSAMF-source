@@ -1,116 +1,126 @@
-# SODA POP source
+# ATSAMF source
 
-This repository contains the source for the [SODA POP][sodapop] by [Steve Weber
-KD1JV][KD1JV], a single band QRP CW transceiver on a 3.6" square board.
+This repository contains the software for the [ATSAMF][], a multiband QRP CW
+transceiver with discrete components, based on the ATS and SODA POP designs by
+[Steve Weber (KD1JV)][KD1JV] and developed by Rick Rabouw (PA5NN).
 
-The original code is copyright &copy; [Steven Weber KD1JV][KD1JV], additions
-and changes are copyright &copy; [PA5ET][] and [VK3IL][]. This only goes for
-the `SODA_POP` directory. Everything is licensed under GPL v3, see the LICENSE
-file.
+The software is based on [Camil Staps (PA5ET)][PA5ET]'s
+[software][sodapop-source] of the [SODA POP][sodapop], with additional features
+and a larger display.
+
+The original software of the SODA POP was written by Steve. The [alternative
+version][sodapop-source] was written by Camil with contributions by [David
+Giddy (VK3IL)][VK3IL]. The adaptation to the ATSAMF is by Camil.
+
+This is open source software, copyright &copy; Steve Weber, Camil Staps, and
+David Giddy, and licensed under GPL v3 (see the LICENSE file).
 
 ---
 
+- [Flashing the firmware](#flashing-the-firmware)
 - [Operation](#operation)
-- [Settings](#settings)
+- [Compile-time settings](#compile-time-settings)
 - [Optional features](#optional-features)
-- [How to flash the firmware](#how-to-flash-the-firmware)
-- [Changelog](#changelog)
 
 ---
+
+## Flashing the firmware
+
+1. Download this repository from
+   https://github.com/camilstaps/ATSAMF-source/archive/master.zip.
+2. In the Arduino IDE open `ATSAMF/ATSAMF.ino`.
+3. Using `Sketch` &rarr; `Manage Libraries`, install the `Etherkit Si5351`
+   library by Jason Milldrum.
+4. Download
+   https://github.com/ladyada/Adafruit_CharacterOLED/archive/master.zip and add
+   it to the IDE using `Sketch` &rarr; `Include Library` &rarr;
+   `Add .ZIP Library`.
+5. Connect the device to your computer and upload the sketch.
 
 ## Operation
 
-To a large extent, operation is as described in the manual.
+Operation is similar to that described in the [SODA POP][sodapop] manual.
 It can be described by the state machine below.
 A detailed description is given under the image.
-Dashed states and edges are [optional features](#optional-features).
 
 ![State machine](README/states.png)
 
 ### Startup
-On startup, the band will be shown (e.g. `bn.20`). After a 1s delay, the rig
-will turn on.
+On startup, the band will be shown. After a 1.5s delay, the rig turns on.
 
 ### Tuning
-Use the rotary encoder to tune. Tuning can be done in steps of 50Hz, 200Hz,
+Use the rotary encoder to tune. Tuning can be done in steps of 10Hz, 100Hz,
 1kHz and 10kHz. Rotate through these steps by pressing the rotary encoder. For
-all steps except 50Hz, the corresponding digit on the display will blink.
+all steps except 10Hz, the corresponding digit on the display will blink.
 
 Direct Frequency Entry (DFE) can be used by holding the encoder button for 1s.
-It is only available when a paddle is connected. The display will read `DFE`.
-Key in the desired frequency. The current digit blinks. Save with the keyer
-switch or cancel with the RIT switch. When all four digits are entered, the
-new frequency is saved automatically. Abbreviations can be used for 0 (T) and 9
+It is only available when a paddle is connected. The display reads `DFE`. Key
+in the desired frequency. The current digit blinks. Save with the keyer switch
+or cancel with the RIT switch. When all four digits are entered, the new
+frequency is saved automatically. Abbreviations can be used for 0 (T) and 9
 (N) and for all numbers when enabled (see under
 [Optional features](#optional-features)).
 
 ### RIT
-Pressing the RIT button turns RIT on. The display will show the RIT offset.
+Pressing the RIT button turns RIT on. This allows you to fix the transmitting
+frequency and receive at an offset of up to &plusmin;10kHz. The display shows
+the RIT offset.
+
+### Tune mode
+Pressing the RIT button for 2s turns tune mode on. In this mode, the keyer
+switch enables and disables transmission, which is useful when tuning the
+antenna. Use RIT to go back.
 
 ### Message memory
-Pressing the keyer switch allows you to send a message from memory. There are
-two messages, use either side of the paddle to send one. Use the RIT switch
-to cancel.
+Pressing the keyer switch allows you to send a message from memory. Select the
+right memory using the rotary encoder and press KEYER. Use the RIT switch to
+cancel.
 
 When a message is being transmitted, you can still use the RIT switch to cancel
 it. You can also enter beacon mode by pressing the keyer switch. In beacon
 mode, the message is repeated continuously with an adjustable delay in between
-(see `BEACON_INTERVAL` under [Settings](#settings)). During transmission, the
-keys are only checked *between* the transmitted characters, so you'll have to
-hold the buttons longer than normally.
+(see `BEACON_INTERVAL` under [Compile-time settings](#compile-time-settings)).
+During transmission, the keys are only checked *between* the transmitted
+characters, so you'll have to hold the buttons longer than normally.
 
-To update the memory, hold the keyer switch for 5s. The display will say
-`Entr.`. Enter the message using the paddle. This is not possible with a
-straight key. The display will flash once after a character space is detected,
-and once again after a word space has been detected. To finish, press the keyer
-switch again. The message will be played back while the display reads `St.?`
-(from 'store'). After this, store the message with either side of the paddle.
-Pressing the RIT switch allows you to key in a message again; pressing the RIT
-switch once more returns to the default state.
+To update the memory, hold the keyer switch for 5s. Enter the message using the
+paddle. This is not possible with a straight key. An open circle in the right
+bottom blinks once after a character space is detected; a closed circle blinks
+after a word space has been detected. To finish, press the keyer switch again.
+The message will be played back. After this, store the message with the rotary
+encoder and the keyer switch. Pressing the RIT switch allows you to key in a
+message again; pressing the RIT switch once more returns to the default state.
 
 The maximum message length is 64 by default (can be changed in `settings.h`).
 If you try to enter more characters, the error routine is enabled (see below).
 
-Using `OPT_MORE_MEMORIES`, it is possible to use up to 10 messages, that can be
-selected using the rotary encoder. See under
-[Optional features](#optional-features).
-
 ### Preferences
-Change the code speed by holding the keyer switch for 2s. The display will read
-`CS.20`, where `20` is the speed in WPM. Use the paddle or the rotary encoder
-to change, and save with the keyer switch.
+Change the code speed by holding the keyer switch for 2s. Use the paddle or the
+rotary encoder to change, and save with the keyer switch.
 
-Change the band by holding the RIT switch for 2s. The display will read
-`bn.20`, where `20` is the band. Save with the keyer switch. This is only
-possible when compiled with `OPT_BAND_SELECT` (see
-[Optional features](#optional-features) below).
+Change the band by holding the RIT switch for 5s. Save with the keyer switch.
 
 ### Calibration
-The calibration routine is explained in the manual. Hold the RIT switch for 5s
-to enter the calibration routine.
+The calibration routine is explained in the manual. Hold the RIT switch for 8s
+to enter the calibration routine. This proceeds through the following steps:
 
-The display will read `corr.`. You can correct the Si5351 by connecting a
-frequency counter to TP3 and fixing it to 10MHz using the rotary encoder.
+1. Correct the Si5351 frequency. Connect a frequency counter to TP3 and turn
+   the rotary encounter to obtain 10MHz.
+2. Correct the intermediate frequency (IF). First adjust CT3 to peak the signal
+   on TP2. Then adapt the frequency using the rotary encoder to peak the signal
+   on TP1 *with a scope*. If the IF had to be changed, readjust CT3; repeat
+   until both TP1 and TP2 are peaked.
+3. Select the right band with the rotary encoder.
+4. Peak the signal with CT1 and CT2. The adjustment can be sharp, especially on
+   the higher frequency bands.
 
-Move on with the keyer switch (the display will show the IF frequency). Adjust
-CT3 to peak the signal on TP2. Peak the IF LO frequency using the rotary
-encoder, peaking the signal on TP1 *with a scope*. If you changed this, go back
-to changing CT3 and repeat.
-
-Move on with the keyer switch (the display will read `bn.16`) and set the band
-using the rotary encoder.
-
-Move on with the keyer switch (the display will read `P. rX`) and peak the
-signal using CT1 and CT2. The adjustment can be sharp, especially on higher
-frequency bands.
-
-Pressing the keyer switch will return to the default state.
+Pressing the keyer switch returns to the default state.
 
 ### Errors
-When an error is detected, the display will read `Err.` and a alarm will be
-sounded. The only way to recover is to restart the rig.
+When an error is detected, the display shows `Error` and an alarm signal is
+given on the sidetone. You need to power cycle the device.
 
-## Settings
+## Compile-time settings
 There are several compile-time settings in `settings.h`. Change them before
 uploading the code to the chip.
 
@@ -143,13 +153,8 @@ uploading the code to the chip.
 There are several features that can be added to the rig if you want to. This is
 done by adding and removing `#define` lines to `settings.h`.
 
-- `OPT_HIDE_LEADING_ZEROES`: hide leading zeroes on frequency display.
-- `OPT_BAND_SELECT`: change the band by pressing RIT for 2s.
-- `OPT_AUTO_BAND`: auto-select bands using a PCA9536 PIO (thanks VK3IL).
-- `OPT_ERASE_EEPROM`: erase the EEPROM by holding RIT for 8s.
-- `OPT_STORE_CW_SPEED`: store the CW speed in EEPROM.
-- `OPT_DFE`: direct frequency entry by holding the encoder button for 1s.
-- `OPT_DFE_OBSCURE_ABBREVIATIONS`: adds number abbreviations to DFE according
+- `OPT_ERASE_EEPROM`: erase the EEPROM by holding RIT for 11s.
+- `OPT_OBSCURE_MORSE_ABBREVIATIONS`: adds number abbreviations to DFE according
   to the table below. Abbreviations for 0 (T) and 9 (N) are always enabled.
 
   | Letter | Number
@@ -162,104 +167,10 @@ done by adding and removing `#define` lines to `settings.h`.
   | B | 6
   | G | 7
   | D | 8
-- `OPT_DISABLE_DISPLAY`: disables the display when in default state after a
-  preset time (default: 2.5s). The buttons still work and when something
-  happens the display turns on again. The encoder button enables the display
-  without doing anything else. The display will blink for 0.5s approximately
-  every 30s to prevent you from leaving the rig on by accident.
-  This saves about 2.5mA (on 59mA total in RX mode).
-- `OPT_MORE_MEMORIES`: allows for up to ten message memories (0 through 9),
-  that can be selected using the rotary encoder instead of with the paddle.
-  Turning the encoder changes the index, pressing the keyer switch selects that
-  memory.
-
-## How to flash the firmware
-
-By far the easiest way to reprogram the controller is using an
-[Arduino Uno][uno].
-
-If you are only planning on flashing new firmware once or twice, just take the
-controller from the SODA POP, plug it in the Arduino, flash it, and put it
-back.
-
-If you are planning on working on the firmware yourself, you will need to flash
-much more often. Not only is moving the chip back and forth annoying and
-time-consuming, it will also break the pins eventually. It is possible to
-program the controller using in-circuit serial programming (ICSP). This is very
-similar to the [method described on the Arduino wiki][uno-prog].
-
-Remove the Atmega chip from the Arduino and connect these four lines:
-
-| Arduino | SODA POP
----|---
-| RESET | 1
-| RX (0) | 2
-| TX (1) | 3
-| GND | 8
-
-**Do not connect Vdd**: to program the board, you will connect a USB cable.
-The Arduino will be powered from the USB port, the SODA POP from its internal
-power supply. Connecting the power lines may cause problems if the voltages
-are not exactly the same.
-
-Programming the board can now be done using the Arduino IDE.
-
-Some images of the connections:
-
-![SODA POP ICSP connector](README/icsp-connector-sodapop.jpg)
-![Arduino ICSP connector](README/icsp-connector-arduino.jpg)
-
-## Changelog
-
-- 2017-06-05:
-  - Fixed issue where large correction values for the Si5351 were not stored
-	properly (issue [#26](/../../issues/26); requires recalibration of the
-	correction value)
-- 2017-05-16:
-  - `OPT_AUTO_BAND` (PR [#22](/../../pull/22) by VK3IL)
-  - Made hiding leading zeroes on frequency display a compile-time option
-	(`OPT_HIDE_LEADING_ZEROES`; issue [#19](/../../issues/19))
-- 2017-05-12:
-  - VK band plans (PR [#21](/../../pull/21) by VK3IL)
-- 2017-05-04:
-  - Beacon mode (issue [#6](/../../issues/6))
-  - More logical UX for sending and storing memories, using RIT to cancel
-  - More memories can be selected by entering a number with the paddle (issue
-    [#16](/../../issues/16))
-  - `OPT_DFE_OBSCURE_ABBREVIATIONS` is now `OPT_OBSCURE_MORSE_ABBREVIATIONS`
-- 2017-05-02:
-  - Power saving mode: the last dot now blinks when the display is off (issue
-    [#18](/../../issues/18))
-  - The old IF frequency is used in the calibration routine
-  - Added band plans for IARU-1,2,3 (issue [#13](/../../issues/13))
-- 2017-04-23 and -25:
-  - Fix timing issues when building with new versions of the Arduino IDE
-- 2017-04-21:
-  - Added up to 10 message memories (issue [#11](/../../issues/11))
-  - Allow for true QSK (issue [#12](/../../issues/12))
-  - Allow for user-defined default frequencies (issue [#15](/../../issues/15))
-  - Minor fixes
-- 2017-04-13:
-  - Made tuning steps an option in `settings.h`
-- 2017-04-12:
-  - Added `OPT_DISABLE_DISPLAY` (issue [#5](/../../issues/5)) (saves ~2.5mA)
-  - More power saving by entering sleep mode at the end of `loop()` (~6mA)
-  - Added comments to clarify the code
-- 2017-04-11:
-  - Rewrote all code to a state machine
-  - Fixed a bug with entering memory
-  - Minor changes to the display
-  - Made several things settings (see `settings.h`)
-  - Big steps tuning (issue [#3](/../../issues/3))
-  - Direct frequency entry (issue [#2](/../../issues/2))
-  - Store CW speed in EEPROM (issue [#1](/../../issues/1))
-- 2017-04-04:
-  - Added bands up to 10m and enabled run-time band switching
-  - Fixed rotary encoder issues
 
 [KD1JV]: http://kd1jv.qrpradio.com/
 [PA5ET]: https://camilstaps.nl
 [VK3IL]: https://www.vk3il.net/
 [sodapop]: https://groups.yahoo.com/neo/groups/AT_Sprint/files/SODA%20POP/
-[uno]: https://www.arduino.cc/en/Main/ArduinoBoardUno
-[uno-prog]: https://www.arduino.cc/en/Tutorial/ArduinoToBreadboard
+[sodapop-source]: https://github.com/camilstaps/SODA-POP-source
+[ATSAMF]: https://a03.veron.nl/projectvoorstel-pa5nn-zelfbouw-qrp-hf-cw-transceiver/

@@ -1,14 +1,14 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #ifndef _H_MEMORY
 #define _H_MEMORY
 
-#include "SODA_POP.h"
+#include "ATSAMF.h"
 
 void store_memory(byte);
 void transmit_memory(byte);
-void playback_buffer();
-void prepare_buffer_for_tx();
+void playback_buffer(void);
+void prepare_buffer_for_tx(void);
 void empty_buffer(void);
 
 #endif

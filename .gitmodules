@@ -1,0 +1,6 @@
+[submodule "ATSAMF/Adafruit_CharacterOLED"]
+	path = Adafruit_CharacterOLED
+	url = https://github.com/ladyada/Adafruit_CharacterOLED
+[submodule "Si5351Arduino"]
+	path = Si5351Arduino
+	url = https://github.com/etherkit/Si5351Arduino

@@ -1,6 +1,8 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #include "morse.h"
+
+const byte MORSE_DIGITS[] = {M0,M1,M2,M3,M4,M5,M6,M7,M8,M9};
 
 /**
  * Key out a character. This function only takes care of timing. What actually

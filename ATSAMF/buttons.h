@@ -1,21 +1,21 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #ifndef _H_BUTTONS
 #define _H_BUTTONS
 
-#include "SODA_POP.h"
+#include "ATSAMF.h"
 
 struct inputs {
   union {
+    unsigned char port;
     struct {
       unsigned char encoder_data:1;
       unsigned char encoder_clock:1;
+      unsigned char _unused:1;
       unsigned char encoder_button:1;
-      unsigned char unused:3;
       unsigned char rit:1;
       unsigned char keyer:1;
     };
-    unsigned char port;
   };
 
   union {

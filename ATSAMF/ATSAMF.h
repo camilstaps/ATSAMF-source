@@ -1,7 +1,7 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
-#ifndef _H_SODA_POP
-#define _H_SODA_POP
+#ifndef _H_ATSAMF
+#define _H_ATSAMF
 
 #include "settings.h"
 
@@ -17,12 +17,9 @@ enum state : unsigned char {
   S_DEFAULT,
   S_KEYING,
   S_ADJUST_CS,
-#ifdef OPT_BAND_SELECT
+  S_TUNE,
   S_CHANGE_BAND,
-#endif
-#ifdef OPT_DFE
   S_DFE,
-#endif
   S_MEM_SEND_WAIT,
   S_MEM_SEND_TX,
   S_MEM_ENTER_WAIT,
@@ -35,7 +32,7 @@ enum state : unsigned char {
   S_ERROR
 };
 
-struct soda_pop {
+struct atsamf {
   enum state state;
 
   struct key_state key;
@@ -47,50 +44,42 @@ struct soda_pop {
   unsigned char rit:1;
   unsigned char tuning_step:3;
 
+  unsigned char tune_mode_on:1;
+
   unsigned char beacon:1;
   unsigned char mem_tx_index;
 
   struct display display;
   volatile struct inputs inputs;
-
-  unsigned int idle_for;
 };
-
-static struct soda_pop state;
-static volatile unsigned long tcount;
-
-static char buffer[MEMORY_LENGTH];
-
-const long tuning_steps[] = TUNING_STEPS;
-const byte tuning_blinks[] = TUNING_STEP_DIGITS;
 
 #define TX_FREQ(state) (state.rit ? state.rit_tx_freq : state.op_freq)
 
-#define SIDETONE_ENABLE() {tone(A2, SIDETONE_FREQ);}
-#define SIDETONE_DISABLE() {noTone(A2);}
+extern struct atsamf state;
+extern volatile unsigned long tcount;
+extern const byte tuning_blinks[];
+extern byte errno;
 
-#ifdef OPT_DFE
-byte dfe_character;
-byte dfe_position;
-unsigned int dfe_freq;
-#endif
+extern byte memory_index;
+extern char buffer[MEMORY_LENGTH];
 
-#ifdef OPT_MORE_MEMORIES
-byte memory_index;
-byte memory_index_character;
-#endif
+extern byte dfe_position;
+extern unsigned long dfe_freq;
+
+
+#define SIDETONE A0
+#define MUTE A1
+#define TXEN 13
+#define DOTin A2
+#define DASHin A3
+
+#define SIDETONE_ENABLE() {tone(SIDETONE, SIDETONE_FREQ);}
+#define SIDETONE_DISABLE() {noTone(SIDETONE);}
 
 #define EEPROM_IF_FREQ   0 // 4 bytes
 #define EEPROM_BAND      6 // 1 byte
-#ifdef OPT_STORE_CW_SPEED
 #define EEPROM_CW_SPEED  7 // 1 byte
-#endif
 #define EEPROM_CAL_VALUE 8 // 4 bytes
-
-#ifdef OPT_AUTO_BAND
-#define PCA9536_BUS_ADDR 0x41	// I2C address for PCA9536
-#undef OPT_BAND_SELECT
-#endif
 
 #endif
 

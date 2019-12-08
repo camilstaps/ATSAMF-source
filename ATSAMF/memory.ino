@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #include "memory.h"
 
@@ -34,7 +34,7 @@ void load_memory(byte nr)
 void prepare_buffer_for_tx()
 {
   for (byte i = MEMORY_LENGTH - 1; i; i--) {
-    if (buffer[i] != 0x00 && buffer[i] != 0xff)
+    if (buffer[i] != 0x00 && buffer[i] != (char)0xff)
       return;
     buffer[i] = 0xff;
   }
@@ -45,7 +45,7 @@ void prepare_buffer_for_tx()
  * timing. What actually happens is defined by key_handle_* functions.
  * See also morse() for a single character.
  */
-void playback_buffer()
+void playback_buffer(void)
 {
   prepare_buffer_for_tx();
 
@@ -66,7 +66,7 @@ void playback_buffer()
 /**
  * Clear the message buffer.
  */
-void empty_buffer()
+void empty_buffer(void)
 {
   for (byte i = 0; i < MEMORY_LENGTH; i++)
     buffer[i] = 0xff;

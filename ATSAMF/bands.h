@@ -1,4 +1,4 @@
-/* Copyright (C) 2017 Camil Staps <pd7lol@camilstaps.nl> */
+/* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
 #ifndef _H_BANDS
 #define _H_BANDS
@@ -11,8 +11,10 @@ enum band : unsigned char {
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
 };
-const unsigned char BAND_DIGITS_2[] = {6,1,8,6,4,3,2,1,1,1,1};
-const unsigned char BAND_DIGITS_1[] = {3,6,0,0,0,0,0,7,5,2,0};
+const unsigned char BAND_DIGITS_1[] = "61864321111";
+const unsigned char BAND_DIGITS_2[] = "36000007520";
+const unsigned char BAND_DIGITS_3[] = "00mmmmmmmmm";
+const unsigned char BAND_DIGITS_4[] = "mm\0\0\0\0\0\0\0\0\0";
 # ifndef DEFAULT_OP_FREQ_630
 # define DEFAULT_OP_FREQ_630 47250000
 # endif
@@ -92,8 +94,10 @@ enum band : unsigned char {
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
 };
-const unsigned char BAND_DIGITS_2[] = {6,1,8,6,4,3,2,1,1,1,1};
-const unsigned char BAND_DIGITS_1[] = {3,6,0,0,0,0,0,7,5,2,0};
+const unsigned char BAND_DIGITS_1[] = "61864321111";
+const unsigned char BAND_DIGITS_2[] = "36000007520";
+const unsigned char BAND_DIGITS_3[] = "00mmmmmmmmm";
+const unsigned char BAND_DIGITS_4[] = "mm\0\0\0\0\0\0\0\0\0";
 # ifndef DEFAULT_OP_FREQ_630
 # define DEFAULT_OP_FREQ_630 47250000
 # endif
@@ -173,8 +177,10 @@ enum band : unsigned char {
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
 };
-const unsigned char BAND_DIGITS_2[] = {6,1,8,4,3,2,1,1,1,1};
-const unsigned char BAND_DIGITS_1[] = {3,6,0,0,0,0,7,5,2,0};
+const unsigned char BAND_DIGITS_1[] = "61864321111";
+const unsigned char BAND_DIGITS_2[] = "36000007520";
+const unsigned char BAND_DIGITS_3[] = "00mmmmmmmmm";
+const unsigned char BAND_DIGITS_4[] = "mm\0\0\0\0\0\0\0\0\0";
 # ifndef DEFAULT_OP_FREQ_630
 # define DEFAULT_OP_FREQ_630 47250000
 # endif
