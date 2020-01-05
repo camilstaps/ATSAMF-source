@@ -35,7 +35,7 @@ unsigned int time_rit(void)
     duration = tcount - start_time;
 #ifdef OPT_ERASE_EEPROM
     if (duration > 11000)
-      display_feedback("Erase...");
+      display_feedback("Erase EEPROM...");
     else
 #endif
     if (duration > 8000) {
