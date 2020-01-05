@@ -69,7 +69,8 @@ the RIT offset.
 ### Tune mode
 Pressing the keyer button for 2s turns tune mode on. In this mode, the keyer
 button enables and disables transmission, which is useful when tuning the
-antenna. Use RIT to go back.
+antenna. You can also use the dot and dash of the paddle to enable and disable
+transmission respectively. Use RIT to exit tune mode.
 
 ### Message memory
 Pressing the keyer button allows you to send a message from memory. Select the

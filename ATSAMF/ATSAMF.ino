@@ -376,6 +376,7 @@ void loop_tune(void)
     debounce_rit();
     straight_key_handle_disable();
     state.state = S_DEFAULT;
+    invalidate_display();
   } else if (state.inputs.keyer) {
     debounce_keyer();
     state.tune_mode_on = ~state.tune_mode_on;
@@ -383,8 +384,21 @@ void loop_tune(void)
       straight_key_handle_enable();
     else
       straight_key_handle_disable();
+    invalidate_display();
+  } else if (state.key.mode == KEY_IAMBIC) {
+    if (state.tune_mode_on) {
+      if (!digitalRead(DASHin)) {
+        state.tune_mode_on = 0;
+        straight_key_handle_disable();
+      }
+    } else {
+      if (!digitalRead(DOTin)) {
+        state.tune_mode_on = 1;
+        straight_key_handle_enable();
+      }
+    }
+    invalidate_display();
   }
-  invalidate_display();
 }
 
 /**

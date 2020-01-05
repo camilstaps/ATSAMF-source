@@ -28,7 +28,7 @@ digraph {
 	adjust_cs -> default [label="Keyer"];
 
 	default -> tune [label="Keyer (2s)"];
-	tune:s -> tune:s [label="Keyer"];
+	tune:s -> tune:s [label="Keyer/paddle"];
 	tune -> default [label="RIT"];
 
 	default -> change_band [label="RIT (5s)"];
