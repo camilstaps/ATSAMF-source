@@ -50,15 +50,15 @@ unsigned int time_rit(void)
       display_feedback("Tune mode...");
       display_progress(2000, 5000, duration);
     }
-    else if (duration > 50) {
+    else if (duration > 500) {
       display_feedback("RIT...");
-      display_progress(50, 2000, duration);
+      display_progress(500, 2000, duration);
     }
     delay(1);
   } while (state.inputs.rit);
   debounce_rit();
 
-  if (duration > 50)
+  if (duration > 500)
     display_feedback("");
   display_clear_progress();
 
@@ -81,18 +81,18 @@ unsigned int time_keyer(void)
     else if (duration > 2000) {
       display_feedback("Set CW speed...");
       display_progress(2000, 5000, duration);
-    } else if (duration > 50) {
+    } else if (duration > 500) {
       if (state.beacon)
         display_feedback("Beacon");
       else
         display_feedback("Send memory");
-      display_progress(50, 2000, duration);
+      display_progress(500, 2000, duration);
     }
     delay(1);
   } while (state.inputs.keyer); // wait until the bit goes high.
   debounce_keyer();
 
-  if (duration > 50)
+  if (duration > 500)
     display_feedback("");
   display_clear_progress();
 
@@ -112,15 +112,15 @@ unsigned int time_encoder_button(void)
     duration = tcount - start_time;
     if (duration > 1000)
       display_feedback("DFE...");
-    else if (duration > 50) {
+    else if (duration > 500) {
       display_feedback("Tuning step...");
-      display_progress(50, 1000, duration);
+      display_progress(500, 1000, duration);
     }
     delay(1);
   } while (state.inputs.encoder_button);
   debounce_encoder_button();
 
-  if (duration > 50)
+  if (duration > 500)
     display_feedback("");
   display_clear_progress();
 
