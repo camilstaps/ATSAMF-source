@@ -397,8 +397,10 @@ void loop_change_band(void)
 {
   if (rotated_up()) {
     nextband(1);
+    invalidate_display();
   } else if (rotated_down()) {
-    nextband(0);
+    nextband(-1);
+    invalidate_display();
   } else if (state.inputs.keyer) {
     store_band();
 
@@ -774,6 +776,7 @@ void loop_calibration_peak_if(void)
     EEPROM.write(EEPROM_IF_FREQ + 2, state.op_freq >> 16);
     EEPROM.write(EEPROM_IF_FREQ + 3, state.op_freq >> 24);
     state.state = S_CALIBRATION_CHANGE_BAND;
+    nextband(0);
     invalidate_frequencies();
     invalidate_display();
 

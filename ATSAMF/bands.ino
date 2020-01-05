@@ -7,19 +7,16 @@
  *
  * @param up: 0 to go down (lower frequency), anything else to go up
  */
-void nextband(byte up)
+void nextband(int8_t up_or_down)
 {
-  if (up)
-    state.band = (enum band) (((byte) state.band) + 1);
-  else
-    state.band = (enum band) (((byte) state.band) - 1);
+  state.band = (enum band) (((int8_t) state.band) + up_or_down);
+
   if (state.band == BAND_UNKNOWN)
     state.band = (enum band) ((byte) LAST_BAND - 1);
   else if (state.band >= LAST_BAND)
     state.band = (enum band) 0;
 
   setup_band();
-  invalidate_display();
 }
 
 /**

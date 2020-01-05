@@ -5,6 +5,8 @@
 
 #include "settings.h"
 
+void nextband(int8_t);
+
 #ifdef PLAN_IARU1
 enum band : unsigned char {
   BAND_630, BAND_160, BAND_80, BAND_60, BAND_40, BAND_30, BAND_20,
