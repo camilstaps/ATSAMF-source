@@ -23,11 +23,11 @@ digraph {
 	default -> keying [label="Key/paddle"];
 	keying -> default;
 
-	default -> adjust_cs [label="Keyer (2s)"];
+	default -> adjust_cs [label="RIT (2s)"];
 	adjust_cs:s -> adjust_cs:s [label="Up/down/paddle"];
 	adjust_cs -> default [label="Keyer"];
 
-	default -> tune [label="RIT (2s)"];
+	default -> tune [label="Keyer (2s)"];
 	tune:s -> tune:s [label="Keyer"];
 	tune -> default [label="RIT"];
 

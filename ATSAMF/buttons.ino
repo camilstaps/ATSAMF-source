@@ -47,7 +47,7 @@ unsigned int time_rit(void)
       display_feedback("Change band...");
       display_progress(5000, 8000, duration);
     } else if (duration > 2000) {
-      display_feedback("Tune mode...");
+      display_feedback("Set CW speed...");
       display_progress(2000, 5000, duration);
     }
     else if (duration > 500) {
@@ -79,7 +79,7 @@ unsigned int time_keyer(void)
     if (duration > 5000)
       display_feedback("Enter memory...");
     else if (duration > 2000) {
-      display_feedback("Set CW speed...");
+      display_feedback("Tune mode...");
       display_progress(2000, 5000, duration);
     } else if (duration > 500) {
       if (state.beacon)

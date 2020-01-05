@@ -276,7 +276,8 @@ void loop_default(void)
       state.state = S_MEM_ENTER_WAIT;
       invalidate_display();
     } else if (duration > 2000) {
-      state.state = S_ADJUST_CS;
+      state.state = S_TUNE;
+      state.tune_mode_on = 0;
       invalidate_display();
     } else if (duration > 50) {
       state.state = S_MEM_SEND_WAIT;
@@ -307,8 +308,7 @@ void loop_default(void)
       }
       invalidate_display();
     } else if (duration > 2000) {
-      state.state = S_TUNE;
-      state.tune_mode_on = 0;
+      state.state = S_ADJUST_CS;
       invalidate_display();
     } else if (duration > 50) {
       if (state.rit) {
