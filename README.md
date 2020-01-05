@@ -55,8 +55,8 @@ all steps except 10Hz, the corresponding digit on the display will blink.
 
 Direct Frequency Entry (DFE) can be used by holding the encoder button for 1s.
 It is only available when a paddle is connected. The display reads `DFE`. Key
-in the desired frequency. The current digit blinks. Save with the keyer switch
-or cancel with the RIT switch. When all four digits are entered, the new
+in the desired frequency. The current digit blinks. Save with the keyer button
+or cancel with the RIT button. When all four digits are entered, the new
 frequency is saved automatically. Abbreviations can be used for 0 (T) and 9
 (N) and for all numbers when enabled (see under
 [Optional features](#optional-features)).
@@ -67,41 +67,41 @@ frequency and receive at an offset of up to &plusmin;10kHz. The display shows
 the RIT offset.
 
 ### Tune mode
-Pressing the RIT button for 2s turns tune mode on. In this mode, the keyer
-switch enables and disables transmission, which is useful when tuning the
+Pressing the keyer button for 2s turns tune mode on. In this mode, the keyer
+button enables and disables transmission, which is useful when tuning the
 antenna. Use RIT to go back.
 
 ### Message memory
-Pressing the keyer switch allows you to send a message from memory. Select the
-right memory using the rotary encoder and press KEYER. Use the RIT switch to
+Pressing the keyer button allows you to send a message from memory. Select the
+right memory using the rotary encoder and press KEYER. Use the RIT button to
 cancel.
 
-When a message is being transmitted, you can still use the RIT switch to cancel
-it. You can also enter beacon mode by pressing the keyer switch. In beacon
+When a message is being transmitted, you can still use the RIT button to cancel
+it. You can also enter beacon mode by pressing the keyer button. In beacon
 mode, the message is repeated continuously with an adjustable delay in between
 (see `BEACON_INTERVAL` under [Compile-time settings](#compile-time-settings)).
 During transmission, the keys are only checked *between* the transmitted
 characters, so you'll have to hold the buttons longer than normally.
 
-To update the memory, hold the keyer switch for 5s. Enter the message using the
+To update the memory, hold the keyer button for 5s. Enter the message using the
 paddle. This is not possible with a straight key. An open circle in the right
 bottom blinks once after a character space is detected; a closed circle blinks
-after a word space has been detected. To finish, press the keyer switch again.
+after a word space has been detected. To finish, press the keyer button again.
 The message will be played back. After this, store the message with the rotary
-encoder and the keyer switch. Pressing the RIT switch allows you to key in a
-message again; pressing the RIT switch once more returns to the default state.
+encoder and the keyer button. Pressing the RIT button allows you to key in a
+message again; pressing the RIT button once more returns to the default state.
 
 The maximum message length is 64 by default (can be changed in `settings.h`).
 If you try to enter more characters, the error routine is enabled (see below).
 
 ### Preferences
-Change the code speed by holding the keyer switch for 2s. Use the paddle or the
-rotary encoder to change, and save with the keyer switch.
+Change the code speed by holding the RIT button for 2s. Use the paddle or the
+rotary encoder to change, and save with the keyer button.
 
-Change the band by holding the RIT switch for 5s. Save with the keyer switch.
+Change the band by holding the RIT button for 5s. Save with the keyer button.
 
 ### Calibration
-The calibration routine is explained in the manual. Hold the RIT switch for 8s
+The calibration routine is explained in the manual. Hold the RIT button for 8s
 to enter the calibration routine. This proceeds through the following steps:
 
 1. Correct the Si5351 frequency. Connect a frequency counter to TP3 and turn
@@ -114,7 +114,7 @@ to enter the calibration routine. This proceeds through the following steps:
 4. Peak the signal with CT1 and CT2. The adjustment can be sharp, especially on
    the higher frequency bands.
 
-Pressing the keyer switch returns to the default state.
+Pressing the keyer button returns to the default state.
 
 ### Errors
 When an error is detected, the display shows `Error` and an alarm signal is
