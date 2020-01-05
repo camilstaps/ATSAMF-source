@@ -58,7 +58,8 @@ unsigned int time_rit(void)
   } while (state.inputs.rit);
   debounce_rit();
 
-  display_feedback("");
+  if (duration > 50)
+    display_feedback("");
   display_clear_progress();
 
   return duration;
@@ -91,7 +92,8 @@ unsigned int time_keyer(void)
   } while (state.inputs.keyer); // wait until the bit goes high.
   debounce_keyer();
 
-  display_feedback("");
+  if (duration > 50)
+    display_feedback("");
   display_clear_progress();
 
   return duration;
@@ -118,7 +120,8 @@ unsigned int time_encoder_button(void)
   } while (state.inputs.encoder_button);
   debounce_encoder_button();
 
-  display_feedback("");
+  if (duration > 50)
+    display_feedback("");
   display_clear_progress();
 
   return duration;

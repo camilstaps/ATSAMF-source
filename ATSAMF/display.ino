@@ -16,12 +16,11 @@
 static Adafruit_CharacterOLED lcd(OLED_V2, LCD_RS, LCD_RW, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 
 // https://www.quinapalus.com/hd44780udg.html
+static uint8_t character_circ_closed[] = {0x0,0x0,0xe,0x1f,0x1f,0x1f,0xe,0x0};
+static uint8_t character_m[] = {0x0,0x0,0x0,0x1a,0x15,0x15,0x11,0x0};
+static uint8_t character_p[] = {0x0,0x0,0x0,0xc,0xa,0xc,0x8,0x0};
 static uint8_t character_r[] = {0x0,0x0,0x1c,0x12,0x1c,0x14,0x12,0x0};
-static uint8_t character_tx[] = {0x0,0xe,0x11,0x4,0xa,0x0,0x4,0x0};
-static uint8_t character_lft[] = {0x0,0x2,0x6,0xe,0x6,0x2,0x0,0x0};
-static uint8_t character_rgt[] = {0x0,0x8,0xc,0xe,0xc,0x8,0x0,0x0};
-static uint8_t character_circ_open[] = {0x0,0xe,0x11,0x11,0x11,0xe,0x0,0x0};
-static uint8_t character_circ_closed[] = {0x0,0xe,0x1f,0x1f,0x1f,0xe,0x0,0x0};
+static uint8_t character_w[] = {0x0,0x0,0x0,0x15,0x15,0x15,0x1a,0x0};
 
 /**
  * Initialize the display: intialize library; show credits; create custom
@@ -29,18 +28,17 @@ static uint8_t character_circ_closed[] = {0x0,0xe,0x1f,0x1f,0x1f,0xe,0x0,0x0};
  */
 void display_init(void)
 {
-  lcd.begin(16, 2);
+  lcd.begin(16, 2, LCD_EUROPEAN_II);
   lcd.setCursor(0, 0);
   lcd.print("   = ATSAMF =   ");
   lcd.setCursor(0, 1);
   lcd.print("   Rick PA5NN   ");
 
-  lcd.createChar(1,character_r);
-  lcd.createChar(2,character_tx);
-  lcd.createChar(3,character_lft);
-  lcd.createChar(4,character_rgt);
-  lcd.createChar(5,character_circ_open);
-  lcd.createChar(6,character_circ_closed);
+  lcd.createChar(1,character_circ_closed);
+  lcd.createChar(2,character_m);
+  lcd.createChar(3,character_p);
+  lcd.createChar(4,character_r);
+  lcd.createChar(5,character_w);
 
   state.display.line_1[0]='\0';
   state.display.line_2[0]='\0';
@@ -151,6 +149,16 @@ void invalidate_display(void)
   switch (state.state) {
     case S_DEFAULT:
     case S_KEYING:
+      {
+        int i=0;
+        if (state.key.speed >= 10)
+          state.display.line_2[i++] = '0' + state.key.speed / 10;
+        state.display.line_2[i++] = '0' + state.key.speed % 10;
+        state.display.line_2[i++] = '\5';
+        state.display.line_2[i++] = '\3';
+        state.display.line_2[i++] = '\2';
+        state.display.line_2[i++] = '\0';
+      }
       break;
     case S_ADJUST_CS:
       display_cs();
@@ -160,17 +168,17 @@ void invalidate_display(void)
       display_band(6);
       break;
     case S_TUNE:
-      strcpy(state.display.line_2, "Tune mode      \5");
+      strcpy(state.display.line_2, "Tune mode      o");
       if (state.tune_mode_on)
-        state.display.line_2[15] = '\6';
+        state.display.line_2[15] = '\1';
       break;
     case S_CHANGE_BAND:
     case S_CALIBRATION_CHANGE_BAND:
-      strcpy(state.display.line_2, "Band: \3");
+      strcpy(state.display.line_2, "Band: \xf7");
       display_band(7);
       if (!state.display.line_2[10])
         state.display.line_2[10] = ' ';
-      state.display.line_2[11] = '\4';
+      state.display.line_2[11] = '\xf6';
       state.display.line_2[12] = '\0';
       break;
     case S_DFE:
@@ -181,15 +189,15 @@ void invalidate_display(void)
       strcpy(state.display.line_2, "Enter memory");
       break;
     case S_MEM_ENTER_REVIEW:
-      strcpy(state.display.line_2, "Store mem? \3..\4");
+      strcpy(state.display.line_2, "Store mem? \xf7..\xf6");
       state.display.line_2[12] = '0' + (memory_index + 1) / 10;
       state.display.line_2[13] = '0' + (memory_index + 1) % 10;
       break;
     case S_MEM_SEND_WAIT:
       if (state.beacon)
-        strcpy(state.display.line_2, "Beacon \3..\4");
+        strcpy(state.display.line_2, "Beacon \xf7..\xf6");
       else
-        strcpy(state.display.line_2, "Memory \3..\4");
+        strcpy(state.display.line_2, "Memory \xf7..\xf6");
       state.display.line_2[8] = '0' + (memory_index + 1) / 10;
       state.display.line_2[9] = '0' + (memory_index + 1) % 10;
       break;
@@ -228,7 +236,7 @@ void invalidate_display(void)
 void display_flash_circle(uint8_t type)
 {
   lcd.setCursor(15,1);
-  lcd.print(type ? '\6' : '\5');
+  lcd.print(type ? '\1' : 'o');
   delay(100);
   lcd.setCursor(15,1);
   lcd.print(' ');
@@ -295,10 +303,10 @@ void display_delay(short millis)
  */
 void display_cs(void)
 {
-  state.display.line_2[0] = '\3';
-  state.display.line_2[1] = '0' + state.key.speed / 10;
+  state.display.line_2[0] = '\xf7';
+  state.display.line_2[1] = state.key.speed >= 10 ? ('0' + state.key.speed / 10) : ' ';
   state.display.line_2[2] = '0' + state.key.speed % 10;
-  strcpy(&state.display.line_2[3], "\4 WPM");
+  strcpy(&state.display.line_2[3], "\xf6 \5\3\2");
 }
 
 /**
@@ -313,7 +321,7 @@ void display_rit(void)
     return;
 
   state.display.line_1[9] = ' ';
-  state.display.line_1[10] = '\1';
+  state.display.line_1[10] = '\4';
 
   if (state.rit_tx_freq > state.op_freq) {
     offset = state.rit_tx_freq - state.op_freq;
