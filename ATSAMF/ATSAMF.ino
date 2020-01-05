@@ -124,6 +124,8 @@ void setup(void)
 
   state.key.mode = KEY_IAMBIC;
   state.key.speed = EEPROM.read(EEPROM_CW_SPEED);
+  if (state.key.speed > KEY_MAX_SPEED)
+    state.key.speed = WPM_DEFAULT;
   state.key.timeout = 1;
   state.key.dash = 0;
   state.key.dot = 0;
