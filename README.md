@@ -32,7 +32,7 @@ David Giddy, and licensed under GPL v3 (see the LICENSE file).
 3. Using `Sketch` &rarr; `Manage Libraries`, install the `Etherkit Si5351`
    library by Jason Milldrum.
 4. Download
-   https://github.com/camilstaps/Adafruit_CharacterOLED/archive/master.zip and
+   https://github.com/ladyada/Adafruit_CharacterOLED/archive/master.zip and
    add it to the IDE using `Sketch` &rarr; `Include Library` &rarr;
    `Add .ZIP Library`.
 5. Connect the device to your computer and upload the sketch.
