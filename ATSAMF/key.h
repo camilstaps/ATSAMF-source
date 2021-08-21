@@ -3,10 +3,12 @@
 #ifndef _H_KEY
 #define _H_KEY
 
-#include "ATSAMF.h"
-
 #define KEY_IAMBIC 0
 #define KEY_STRAIGHT 1
+
+#ifdef __cplusplus
+extern "C"{
+#endif
 
 struct key_state {
   unsigned char mode:1;
@@ -25,6 +27,19 @@ byte key_active(void);
 void straight_key(void);
 void key_isr(void);
 void iambic_key(void);
+
+extern void straight_key_handle_enable(void);
+extern void straight_key_handle_disable(void);
+
+extern void key_handle_start(void);
+extern void key_handle_end(void);
+extern void key_handle_dash(void);
+extern void key_handle_dashdot_end(void);
+extern void key_handle_dot(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

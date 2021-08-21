@@ -1,6 +1,17 @@
 /* Copyright (C) 2020 Camil Staps <pa5et@camilstaps.nl> */
 
+#include <Arduino.h>
 #include "key.h"
+#include "ATSAMF.h"
+
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+static void dash(void);
+static void dot(void);
+static void wait_check_dash(void);
+static void wait_check_dot(void);
 
 /**
  * Change the paddle speed according to the parameter, withing the
@@ -115,7 +126,7 @@ void iambic_key(void)
  * actually happens is defined by key_handle_dash() and
  * key_handle_dashdot_end(), depending on the current state.
  */
-void dash(void)
+static void dash(void)
 {
   key_handle_dash();
   state.key.dash = 0;
@@ -134,7 +145,7 @@ void dash(void)
 /**
  * Wait for a key timeout and update the dot status.
  */
-void wait_check_dot(void)
+static void wait_check_dot(void)
 {
   do {
     if (digitalRead(DOTin) == LOW)
@@ -148,7 +159,7 @@ void wait_check_dot(void)
  * actually happens is defined by key_handle_dot() and
  * key_handle_dashdot_end(), depending on the current state.
  */
-void dot(void)
+static void dot(void)
 {
   key_handle_dot();
   state.key.dot = 0;
@@ -167,7 +178,7 @@ void dot(void)
 /**
  * Wait for a key timeout and update the dash status.
  */
-void wait_check_dash(void)
+static void wait_check_dash(void)
 {
   do {
     if (digitalRead(DASHin) == LOW)
@@ -175,5 +186,9 @@ void wait_check_dash(void)
     delay(1);
   } while (!state.key.timeout);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 // vim: tabstop=2 shiftwidth=2 expandtab:

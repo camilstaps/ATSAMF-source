@@ -3,6 +3,8 @@
 #ifndef _H_ATSAMF
 #define _H_ATSAMF
 
+#include <Arduino.h>
+
 #include "settings.h"
 
 #include "bands.h"
@@ -12,7 +14,15 @@
 #include "memory.h"
 #include "morse.h"
 
-enum state : unsigned char {
+#ifdef __cplusplus
+extern "C"{
+#endif
+
+enum state
+#ifdef __cplusplus
+  : unsigned char
+#endif
+  {
   S_STARTUP,
   S_DEFAULT,
   S_KEYING,
@@ -80,6 +90,10 @@ extern unsigned long dfe_freq;
 #define EEPROM_BAND      6 // 1 byte
 #define EEPROM_CW_SPEED  7 // 1 byte
 #define EEPROM_CAL_VALUE 8 // 4 bytes
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

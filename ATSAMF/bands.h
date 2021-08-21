@@ -8,7 +8,11 @@
 void nextband(int8_t);
 
 #ifdef PLAN_IARU1
-enum band : unsigned char {
+enum band
+# ifdef __cplusplus
+  : unsigned char
+# endif
+  {
   BAND_630, BAND_160, BAND_80, BAND_60, BAND_40, BAND_30, BAND_20,
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
@@ -89,9 +93,12 @@ const unsigned long BAND_OP_FREQS[] =
   , DEFAULT_OP_FREQ_12
   , DEFAULT_OP_FREQ_10
   };
-#else /* End of PLAN_IARU1 */
-#ifdef PLAN_IARU2
-enum band : unsigned char {
+#elif defined(PLAN_IARU2)
+enum band
+# ifdef __cplusplus
+  : unsigned char
+# endif
+  {
   BAND_630, BAND_160, BAND_80, BAND_60, BAND_40, BAND_30, BAND_20,
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
@@ -172,9 +179,12 @@ const unsigned long BAND_OP_FREQS[] =
   , DEFAULT_OP_FREQ_12
   , DEFAULT_OP_FREQ_10
   };
-#else /* End of PLAN_IARU2 */
-#ifdef PLAN_IARU3
-enum band : unsigned char {
+#elif defined(PLAN_IARU3)
+enum band
+# ifdef __cplusplus
+  : unsigned char
+# endif
+  {
   BAND_630, BAND_160, BAND_80, BAND_40, BAND_30, BAND_20,
   BAND_17, BAND_15, BAND_12, BAND_10,
   LAST_BAND, BAND_UNKNOWN = 0xff
@@ -249,8 +259,7 @@ const unsigned long BAND_OP_FREQS[] =
   , DEFAULT_OP_FREQ_12
   , DEFAULT_OP_FREQ_10
   };
-#else /* End of PLAN_IARU3 */
-#ifdef PLAN_VK
+#elif defined(PLAN_VK)
 enum band : unsigned char {
   BAND_630, BAND_160, BAND_80, BAND_40, BAND_30, BAND_20,
   BAND_17, BAND_15, BAND_12, BAND_10,
@@ -328,11 +337,8 @@ const unsigned long BAND_OP_FREQS[] =
   , DEFAULT_OP_FREQ_12
   , DEFAULT_OP_FREQ_10
   };
-#else /* End of PLAN_VK */
-#error Please select a band plan using #define PLAN_...
-#endif
-#endif
-#endif
+#else
+# error Please select a band plan using #define PLAN_...
 #endif
 
 #endif

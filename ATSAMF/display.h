@@ -10,6 +10,10 @@
 #define BLINK_100HZ (1 << 2)
 #define BLINK_1KHZ  (1 << 1)
 
+#ifdef __cplusplus
+extern "C"{
+#endif
+
 struct display {
   char line_1[17];
   char line_2[17];
@@ -23,6 +27,12 @@ void display_feedback(const char*);
 void display_progress(short,short,short);
 void display_clear_progress(void);
 void display_delay(short);
+
+void invalidate_display(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
