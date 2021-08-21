@@ -100,10 +100,12 @@ void iambic_key(void)
         dash();
       if (digitalRead(DOTin) == LOW)
         dot();
-      if (state.key.dash)
-        dash();
-      if (state.key.dot)
-        dot();
+      while (state.key.dash || state.key.dot) {
+        if (state.key.dash)
+          dash();
+        if (state.key.dot)
+          dot();
+      }
       delay(1);
     } while (!state.key.timeout);
 
