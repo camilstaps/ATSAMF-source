@@ -104,6 +104,7 @@ void iambic_key(void)
         dash();
       if (state.key.dot)
         dot();
+      delay(1);
     } while (!state.key.timeout);
 
     state.key.timer = state.key.dash_time * 2;
@@ -115,6 +116,7 @@ void iambic_key(void)
         repeat = 1;
         break;
       }
+      delay(1);
     } while (!state.key.timeout);
   }
 

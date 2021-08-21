@@ -1,0 +1,20 @@
+cabal-version:      2.4
+name:               test-ATSAMF
+version:            0.1.0.0
+synopsis:           Test the ATSAMF Arduino code
+homepage:           https://github.com/camilstaps/ATSAMF-source
+
+license:            GPL-3.0-only
+author:             Camil Staps
+maintainer:         info@camilstaps.nl
+
+category:           Testing
+
+test-suite test
+    main-is:          Main.hs
+    type:             exitcode-stdio-1.0
+    default-language: Haskell2010
+    ld-options:       test_key.o key.o
+    build-depends:    base ^>=4.15.0.0
+    build-depends:    QuickCheck ^>=2.14.2
+    hs-source-dirs:   .
