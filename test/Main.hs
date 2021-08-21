@@ -26,7 +26,7 @@ import Test.QuickCheck.Random
 
 main :: IO ()
 main = do
-  result <- quickCheckWithResult args singleCharacter
+  result <- quickCheckWithResult args testAgainstSpecification
   unless (isSuccess result) exitFailure
   where
     args = stdArgs
@@ -64,8 +64,8 @@ instance Arbitrary InputSequence where arbitrary = InputSequence <$> arbitrary
 type Result = String
 
 -- |Checks that the 'Result' for an 'InputSequence' matches the expected value.
-singleCharacter :: InputSequence -> Property
-singleCharacter input = monadicIO $ do
+testAgainstSpecification :: InputSequence -> Property
+testAgainstSpecification input = monadicIO $ do
   output <- run (iambicKey input)
   stop $ output === expectedResult input :: PropertyM IO ()
 

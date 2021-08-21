@@ -92,6 +92,9 @@ char *run_test(char *_character) {
 	while (*character) {
 		iambic_key();
 
+		/* We get here when after 7 empty periods: the keying routine returns.
+		 * If the input is not finished, we need to delay for one DOT_TIME so
+		 * that the next character is loaded (see `delay`), and continue. */
 		state.key.timer = DOT_TIME;
 		delay(DOT_TIME);
 	}
