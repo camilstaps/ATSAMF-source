@@ -34,35 +34,42 @@ main = do
         maxSuccess = 100000 -- Larger test suite by default
       }
 
--- |Describes a state of the paddle while sending a single character: either
--- one lever is squeezed ('SqueezeDash', 'SqueezeDot') or both ('SqueezeBoth').
-data Input
-  = SqueezeDash
-  | SqueezeDot
-  | SqueezeBoth
-  deriving (Eq, Show)
+-- |Describes a state of the paddle while sending: both levers can be squeezed
+-- independent from each other.
+data Input = Input
+  { dashSqueezed :: Bool,
+    dotSqueezed :: Bool
+  }
 
-instance Arbitrary Input where
-  arbitrary = elements [SqueezeDash, SqueezeDot, SqueezeBoth]
+-- |Dashes and dots are represented with '-' and '.'; when both are squeezed a
+-- 'B' is used. Silence is represented as ' '.
+instance Show Input where
+  show input
+    | dashSqueezed input = if dotSqueezed input then "B" else "-"
+    | dotSqueezed input = "."
+    | otherwise = " "
 
--- |The input sequence for a single character is simply a '[Input]'.
-type InputChar = [Input]
+instance Arbitrary Input where arbitrary = Input <$> arbitrary <*> arbitrary
 
--- |The result of sending a character is a sequence of 'Dash'es and 'Dot's.
-type ResultChar = [Result]
+-- |The 'Arbitrary' instance takes care that the start and end of the input
+-- sequence are non-silent (either dash or dot is squeezed, or both).
+newtype InputSequence = InputSequence { getInputSequence :: NonEmptyList Input }
 
-data Result
-  = Dash
-  | Dot
-  deriving (Eq, Show)
+instance Show InputSequence where show = concatMap show . getNonEmpty . getInputSequence
 
--- |Checks that the 'ResultChar' for an 'InputChar' matches the expected value.
-singleCharacter :: InputChar -> Property
+instance Arbitrary InputSequence where arbitrary = InputSequence <$> arbitrary
+
+-- |The result of sending one character is a sequence of '-'s and '.'s,
+-- possibly separated by spaces.
+type Result = String
+
+-- |Checks that the 'Result' for an 'InputSequence' matches the expected value.
+singleCharacter :: InputSequence -> Property
 singleCharacter input = monadicIO $ do
   output <- run (iambicKey input)
   stop $ output === expectedResult input :: PropertyM IO ()
 
--- |Gives the expected 'ResultChar' given an 'InputChar'.
+-- |Gives the expected 'Result' given an 'InputSequence'.
 -- The principle here is that 'Input's alternate with state transitions in the
 -- keyer.
 --
@@ -78,74 +85,61 @@ singleCharacter input = monadicIO $ do
 -- as a shallowly embedded DSL: the functions are states; the arguments are
 -- memory. The states traverse the input sequence and produce the result
 -- sequence.
-expectedResult :: InputChar -> ResultChar
-expectedResult = start
+expectedResult :: InputSequence -> Result
+expectedResult = unwords . words . start . getNonEmpty . getInputSequence
   where
     -- |The initial state, when no dashes and dots are queud.
-    start [] = []
-    start (SqueezeDot : rest) = playDot False rest
-    start (input : rest) = playDash (input == SqueezeBoth) rest
+    -- When we are in this state for 7+ iterations, a new character is begun.
+    start = start' 0
 
-    -- |Produce a 'Dot' and check the dash lever.
-    playDot dashQueued input = Dot : playDot' dashQueued input
+    start' 6 input = ' ' : start' 7 input
+    start' i [] = []
+    start' i (input : rest)
+      | dashSqueezed input = playDash (dotSqueezed input) rest
+      | dotSqueezed input = playDot False rest
+      | otherwise = start' (i + 1) rest
 
-    playDot' dashQueued [] = [Dash | dashQueued]
-    playDot' dashQueued (input : rest) = waitAfterDot
-      (dashQueued || input == SqueezeDash || input == SqueezeBoth)
-      rest
+    -- |Produce a '.' and check the dash lever.
+    playDot dashQueued input = '.' : playDot' dashQueued input
 
-    -- |After playing a 'Dot', we are quiet for one dot time and check the dash
+    playDot' dashQueued [] = ['-' | dashQueued]
+    playDot' dashQueued (input : rest) =
+      waitAfterDot (dashQueued || dashSqueezed input) rest
+
+    -- |After playing a '.', we are quiet for one dot time and check the dash
     -- lever.
-    waitAfterDot dashQueued [] = [Dash | dashQueued]
+    waitAfterDot dashQueued [] = ['-' | dashQueued]
     waitAfterDot dashQueued (input : rest)
-      | dashQueued || input == SqueezeDash || input == SqueezeBoth =
-        playDash (input == SqueezeDot || input == SqueezeBoth) rest
-      | input == SqueezeDot =
-        playDot False rest
-      | otherwise =
-        start rest
+      | dashQueued || dashSqueezed input = playDash (dotSqueezed input) rest
+      | dotSqueezed input = playDot False rest
+      | otherwise = start rest
 
-    -- |Poduce a 'Dash' and check the dot lever. We need a counter because
-    -- dashes take thrice as long as dots.
-    playDash dotQueued input = Dash : playDash' 2 dotQueued input
+    -- |Poduce a '-' and check the dot lever. We need a counter because dashes
+    -- take thrice as long as dots.
+    playDash dotQueued input = '-' : playDash' 2 dotQueued input
 
-    playDash' _ dotQueued [] = [Dot | dotQueued]
-    playDash' 0 dotQueued (input : rest) = waitAfterDash
-      (dotQueued || input == SqueezeDot || input == SqueezeBoth)
-      rest
-    playDash' i dotQueued (input : rest) = playDash'
-      (i - 1)
-      (dotQueued || input == SqueezeDot || input == SqueezeBoth)
-      rest
+    playDash' _ dotQueued [] = ['.' | dotQueued]
+    playDash' 0 dotQueued (input : rest) =
+      waitAfterDash (dotQueued || dotSqueezed input) rest
+    playDash' i dotQueued (input : rest) =
+      playDash' (i - 1) (dotQueued || dotSqueezed input) rest
 
-    -- |After playing a 'Dash', we are quiet for one dot time and check the dot
+    -- |After playing a '-', we are quiet for one dot time and check the dot
     -- lever.
-    waitAfterDash dotQueued [] = [Dot | dotQueued]
+    waitAfterDash dotQueued [] = ['.' | dotQueued]
     waitAfterDash dotQueued (input : rest)
-      | dotQueued || input == SqueezeDot || input == SqueezeBoth =
-        playDot (input == SqueezeDash || input == SqueezeBoth) rest
-      | input == SqueezeDash =
-        playDash False rest
-      | otherwise =
-        start rest
+      | dotQueued || dotSqueezed input = playDot (dashSqueezed input) rest
+      | dashSqueezed input = playDash False rest
+      | otherwise = start rest
 
 -- |To send an input sequence to C.
-packInputChar :: InputChar -> String
-packInputChar = map $ \case
-  SqueezeDash -> '-'
-  SqueezeDot -> '.'
-  SqueezeBoth -> 'B'
-
--- |To receive a result sequence from C.
-unpackResultChar :: String -> ResultChar
-unpackResultChar = map $ \case
-  '-' -> Dash
-  '.' -> Dot
+packInputSequence :: InputSequence -> String
+packInputSequence = concatMap show . getNonEmpty . getInputSequence
 
 -- |Run a test case against the actual C implementation.
-iambicKey :: InputChar -> IO ResultChar
+iambicKey :: InputSequence -> IO Result
 iambicKey input =
-  withCString (packInputChar input) $
-  run_test >=> peekCString ^>> fmap unpackResultChar
+  withCString (packInputSequence input) $
+  run_test >=> peekCString >>^ fmap (unwords . words)
 
 foreign import ccall "test_key.h run_test" run_test :: CString -> IO CString

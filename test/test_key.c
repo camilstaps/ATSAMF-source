@@ -9,13 +9,23 @@
 extern "C"{
 #endif
 
-#define DOT_TIME 100
+#define DOT_TIME 10
+#define BUFFER_SIZE 128
 
 struct atsamf state;
 
 static char *character;
-static char result[128];
+static char result[BUFFER_SIZE];
 static char *result_ptr;
+
+static void add_result(char c) {
+	if (result_ptr-BUFFER_SIZE >= result_ptr) {
+		printf("result buffer overflow\n");
+		exit(-1);
+	}
+	*result_ptr++ = c;
+	*result_ptr = '\0';
+}
 
 void delay(unsigned long ms) {
 	for (; ms; ms--) {
@@ -56,16 +66,15 @@ void key_handle_start(void) {
 }
 
 void key_handle_end(void) {
+	add_result(' ');
 }
 
 void key_handle_dash(void) {
-	*result_ptr++ = '-';
-	*result_ptr = '\0';
+	add_result('-');
 }
 
 void key_handle_dot(void) {
-	*result_ptr++ = '.';
-	*result_ptr = '\0';
+	add_result('.');
 }
 
 void key_handle_dashdot_end(void) {
@@ -80,7 +89,12 @@ char *run_test(char *_character) {
 	result_ptr = result;
 	*result_ptr = '\0';
 
-	iambic_key();
+	while (*character) {
+		iambic_key();
+
+		state.key.timer = DOT_TIME;
+		delay(DOT_TIME);
+	}
 
 	return result;
 }
