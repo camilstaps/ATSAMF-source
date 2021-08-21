@@ -98,11 +98,10 @@ void iambic_key(void)
     do {
       if (digitalRead(DASHin) == LOW)
         dash();
-      if (digitalRead(DOTin) == LOW)
+      if (digitalRead(DOTin) == LOW || state.key.dot)
         dot();
-      while (state.key.dash || state.key.dot) {
-        if (state.key.dash)
-          dash();
+      while (state.key.dash) {
+        dash();
         if (state.key.dot)
           dot();
       }
