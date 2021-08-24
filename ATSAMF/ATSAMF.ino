@@ -116,7 +116,7 @@ void setup(void)
   pinMode(DASHin, INPUT_PULLUP);
   pinMode(DOTin, INPUT_PULLUP);
 
-  digitalWrite(MUTE, HIGH);
+  digitalWrite(MUTE, LOW);
   digitalWrite(TXEN, LOW);
   digitalWrite(6, LOW); /* for buttons */
 
@@ -170,7 +170,7 @@ void setup(void)
   }
 
   invalidate_display();
-  digitalWrite(MUTE, LOW);
+  digitalWrite(MUTE, HIGH);
 
   if (digitalRead(DASHin) == LOW)
     state.key.mode = KEY_STRAIGHT;
@@ -883,7 +883,7 @@ void key_handle_end(void)
  */
 void key_handle_dash(void)
 {
-  digitalWrite(MUTE, HIGH);
+  digitalWrite(MUTE, LOW);
   SIDETONE_ENABLE();
   if (state.state == S_KEYING || state.state == S_MEM_SEND_TX) {
     enable_rx_tx(RX_OFF_TX_ON);
@@ -899,7 +899,7 @@ void key_handle_dash(void)
  */
 void key_handle_dot(void)
 {
-  digitalWrite(MUTE, HIGH);
+  digitalWrite(MUTE, LOW);
   SIDETONE_ENABLE();
   if (state.state == S_KEYING || state.state == S_MEM_SEND_TX) {
     enable_rx_tx(RX_OFF_TX_ON);
@@ -922,7 +922,7 @@ void key_handle_dashdot_end(void)
   digitalWrite(TXEN, LOW);
   delay(5);
   enable_rx_tx(RX_ON_TX_OFF);
-  digitalWrite(MUTE, LOW);
+  digitalWrite(MUTE, HIGH);
 }
 
 /**
@@ -933,7 +933,7 @@ void key_handle_dashdot_end(void)
 void straight_key_handle_enable(void)
 {
   SIDETONE_ENABLE();
-  digitalWrite(MUTE, HIGH);
+  digitalWrite(MUTE, LOW);
   enable_rx_tx(RX_OFF_TX_ON);
   delay(1);
   digitalWrite(TXEN, HIGH);
@@ -947,7 +947,7 @@ void straight_key_handle_disable(void)
   digitalWrite(TXEN, LOW);
   delay(5);
   enable_rx_tx(RX_ON_TX_OFF);
-  digitalWrite(MUTE, LOW);
+  digitalWrite(MUTE, HIGH);
   SIDETONE_DISABLE();
 }
 
