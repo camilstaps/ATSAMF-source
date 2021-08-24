@@ -11,7 +11,6 @@ struct inputs {
     struct {
       unsigned char encoder_data:1;
       unsigned char encoder_clock:1;
-      unsigned char _unused:1;
       unsigned char encoder_button:1;
       unsigned char rit:1;
       unsigned char keyer:1;

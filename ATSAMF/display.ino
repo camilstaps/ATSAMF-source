@@ -5,13 +5,13 @@
 
 #define BLINKED_ON ((((byte) tcount) >> 7) & 0x01)
 
-#define LCD_RS  7
-#define LCD_RW  2
-#define LCD_EN  8
-#define LCD_D4  9
-#define LCD_D5 10
-#define LCD_D6 11
-#define LCD_D7 12
+#define LCD_RS  5
+#define LCD_RW  6
+#define LCD_EN  7
+#define LCD_D4  8
+#define LCD_D5  9
+#define LCD_D6 10
+#define LCD_D7 11
 
 static Adafruit_CharacterOLED lcd(OLED_V2, LCD_RS, LCD_RW, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 

@@ -37,9 +37,9 @@
  * Switch input bits locations:
  * 0 Encoder A
  * 1 Encoder B
- * 3 Encoder button
- * 4 RIT
- * 5 Keyer button
+ * 2 Encoder button
+ * 3 RIT
+ * 4 Keyer button
  */
 
 #include <EEPROM.h>
@@ -107,7 +107,7 @@ void setup(void)
 {
   state.state = S_STARTUP;
 
-  DDRD = 0xc4; /* D0-7 */
+  DDRD = 0xc0; /* D0-7 */
   PORTD = 0x3b; /* pull-ups */
   DDRB = 0xff; /* D8-13 */
 
