@@ -272,7 +272,10 @@ void loop_default(void)
   // Keyer switch for memory and code speed
   } else if (state.inputs.keyer) {
     duration = time_keyer();
-    if (duration > 5000) {
+    if (duration > 8000) {
+      /* do nothing */
+      invalidate_display();
+    } else if (duration > 5000) {
       state.state = S_MEM_ENTER_WAIT;
       invalidate_display();
     } else if (duration > 2000) {
@@ -287,6 +290,16 @@ void loop_default(void)
   // RIT switch for RIT, changing band, calibration and erasing EEPROM
   } else if (state.inputs.rit) {
     duration = time_rit();
+    if (duration >
+#ifdef OPT_ERASE_EEPROM
+        14000
+#else
+        11000
+#endif
+        ) {
+      /* do nothing */
+      invalidate_display();
+    } else
 #ifdef OPT_ERASE_EEPROM
     if (duration > 11000) {
       ee_erase();

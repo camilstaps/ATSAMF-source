@@ -33,16 +33,24 @@ unsigned int time_rit(void)
 
   do {
     duration = tcount - start_time;
+    if (duration >
 #ifdef OPT_ERASE_EEPROM
-    if (duration > 11000)
+        14000
+#else
+        11000
+#endif
+        ) {
+      display_feedback("Cancel...");
+    } else
+#ifdef OPT_ERASE_EEPROM
+    if (duration > 11000) {
       display_feedback("Erase EEPROM...");
-    else
+      display_progress(11000, 14000, duration);
+    } else
 #endif
     if (duration > 8000) {
       display_feedback("Recalibrate...");
-#ifdef OPT_ERASE_EEPROM
       display_progress(8000, 11000, duration);
-#endif
     } else if (duration > 5000) {
       display_feedback("Change band...");
       display_progress(5000, 8000, duration);
@@ -76,9 +84,12 @@ unsigned int time_keyer(void)
 
   do {
     duration = tcount - start_time;
-    if (duration > 5000)
+    if (duration > 8000) {
+      display_feedback("Cancel...");
+    } else if (duration > 5000) {
       display_feedback("Enter memory...");
-    else if (duration > 2000) {
+      display_progress(5000, 8000, duration);
+    } else if (duration > 2000) {
       display_feedback("Tune mode...");
       display_progress(2000, 5000, duration);
     } else if (duration > 500) {
