@@ -98,6 +98,22 @@ ISR (TIMER1_COMPA_vect)
   buttons_isr();
 }
 
+static uint8_t confirm (const char *question)
+{
+  display_question(question);
+
+  while (1) {
+    if (state.inputs.keyer) {
+      debounce_keyer();
+      return 1;
+    } else if (state.inputs.rit) {
+      debounce_rit();
+      return 0;
+    }
+    delay(1);
+  }
+}
+
 /**
  * Arduino's initialisation routine.
  * Sets up the device's state, the Si5351, and loads persistsent settings from
@@ -302,15 +318,18 @@ void loop_default(void)
     } else
 #ifdef OPT_ERASE_EEPROM
     if (duration > 11000) {
-      ee_erase();
+      if (confirm("Erase EEPROM?"))
+        ee_erase();
       invalidate_display();
     } else
 #endif
     if (duration > 8000) {
-      state.state = S_CALIBRATION_CORRECTION;
+      if (confirm("Calibrate?")) {
+        state.state = S_CALIBRATION_CORRECTION;
+        calibration_set_correction();
+        enable_rx_tx(RX_OFF_TX_ON);
+      }
       invalidate_display();
-      calibration_set_correction();
-      enable_rx_tx(RX_OFF_TX_ON);
     } else if (duration > 5000) {
       state.state = S_CHANGE_BAND;
       if (state.rit) {
@@ -1087,34 +1106,12 @@ void store_cw_speed(void)
   EEPROM.write(EEPROM_CW_SPEED, state.key.speed);
 }
 
-static uint8_t confirm (const char *question)
-{
-  display_question(question);
-
-  while (1) {
-    if (state.inputs.keyer) {
-      debounce_keyer();
-      return 1;
-    } else if (state.inputs.rit) {
-      debounce_rit();
-      return 0;
-    }
-    delay(1);
-  }
-}
-
 #ifdef OPT_ERASE_EEPROM
 /**
  * Erase settings from EEPROM. This does not clear the message memories.
  */
 void ee_erase(void)
 {
-  if (!confirm("Erase EEPROM?")) {
-    display_feedback("Cancelled.");
-    display_delay(1500);
-    return;
-  }
-
   for (byte i = 0; i <= MEMORY_EEPROM_START; i++)
     EEPROM.write(i, 0xff);
 
