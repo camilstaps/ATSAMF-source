@@ -57,6 +57,7 @@ digraph {
 	mem_enter_review -> default [label="Keyer"];
 
 	default -> cal_correction [label="RIT (8s)"];
+	cal_correction -> default [label="RIT"];
 	cal_correction:e -> cal_correction:e [label="Up/down"];
 	cal_correction -> cal_peak_if [label="Keyer"];
 	cal_peak_if:w -> cal_peak_if:w [label="Up/down"];
