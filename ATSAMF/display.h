@@ -24,6 +24,7 @@ void display_init(void);
 void display_isr(void);
 void display_flash_circle(uint8_t);
 void display_feedback(const char*);
+void display_question(const char*);
 void display_progress(short,short,short);
 void display_clear_progress(void);
 void display_delay(short);

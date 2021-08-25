@@ -243,6 +243,17 @@ void display_flash_circle(uint8_t type)
 }
 
 /**
+ * Display a question on the first line with Yes / No options on the second
+ * line.
+ */
+void display_question(const char *question)
+{
+  strcpy(state.display.line_1, question);
+  strcpy(state.display.line_2, "RIT=No Keyer=Yes");
+  refresh_display();
+}
+
+/**
  * Display feedback on the second line (used while a button is pressed to
  * select some action).
  */
