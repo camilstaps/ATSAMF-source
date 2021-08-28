@@ -21,6 +21,8 @@ static uint8_t character_m[] = {0x0,0x0,0x0,0x1a,0x15,0x15,0x11,0x0};
 static uint8_t character_p[] = {0x0,0x0,0x0,0xc,0xa,0xc,0x8,0x0};
 static uint8_t character_r[] = {0x0,0x0,0x1c,0x12,0x1c,0x14,0x12,0x0};
 static uint8_t character_w[] = {0x0,0x0,0x0,0x15,0x15,0x15,0x1a,0x0};
+static uint8_t character_arr_l[] = {0x0,0x2,0x6,0xe,0x1e,0xe,0x6,0x2};
+static uint8_t character_arr_r[] = {0x0,0x8,0xc,0xe,0xf,0xe,0xc,0x8};
 
 /**
  * Initialize the display: intialize library; show credits; create custom
@@ -39,6 +41,8 @@ void display_init(void)
   lcd.createChar(3,character_p);
   lcd.createChar(4,character_r);
   lcd.createChar(5,character_w);
+  lcd.createChar(6,character_arr_l);
+  lcd.createChar(7,character_arr_r);
 
   state.display.line_1[0]='\0';
   state.display.line_2[0]='\0';
@@ -314,10 +318,10 @@ void display_delay(short millis)
  */
 void display_cs(void)
 {
-  state.display.line_2[0] = '\xf7';
+  state.display.line_2[0] = '\6';
   state.display.line_2[1] = state.key.speed >= 10 ? ('0' + state.key.speed / 10) : ' ';
   state.display.line_2[2] = '0' + state.key.speed % 10;
-  strcpy(&state.display.line_2[3], "\xf6 \5\3\2");
+  strcpy(&state.display.line_2[3], "\7 \5\3\2");
 }
 
 /**
