@@ -27,7 +27,7 @@
  * #define DEFAULT_OP_FREQ_20 1405500000
  * ... setting the default frequency to 14.055 MHz on 20m.
  */
-#define PLAN_IARU2
+#define PLAN_IARU1
 
 /* Custom default operating frequencies, per band, in mHz.
  * See bands.h for defaults */
