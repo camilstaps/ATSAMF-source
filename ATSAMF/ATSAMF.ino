@@ -621,7 +621,9 @@ void loop_mem_enter_review(void)
   } else if (state.inputs.keyer) {
     store_memory(memory_index);
     morse(MM);
-    morse(MORSE_DIGITS[memory_index]);
+    if (memory_index + 1 >= 10)
+      morse(MORSE_DIGITS[(memory_index + 1) / 10]);
+    morse(MORSE_DIGITS[(memory_index + 1) % 10]);
     memory_index = 0;
     state.state = S_DEFAULT;
     invalidate_display();
