@@ -69,7 +69,7 @@ const unsigned long BAND_LIMITS_LOW[] =
   };
 const unsigned long BAND_LIMITS_HIGH[] =
   {  47900000
-  ,  200000000
+  ,  199999999
   ,  380000000
   ,  536650000
   ,  720000000
@@ -155,7 +155,7 @@ const unsigned long BAND_LIMITS_LOW[] =
   };
 const unsigned long BAND_LIMITS_HIGH[] =
   {  47900000
-  ,  200000000
+  ,  199999999
   ,  400000000
   ,  536650000
   ,  730000000
@@ -237,7 +237,7 @@ const unsigned long BAND_LIMITS_LOW[] =
   };
 const unsigned long BAND_LIMITS_HIGH[] =
   {  47900000
-  ,  200000000
+  ,  199999999
   ,  390000000
   ,  730000000
   , 1015000000
