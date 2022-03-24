@@ -537,15 +537,15 @@ void loop_dfe(void)
     dfe_freq += add;
 
     if (dfe_position-- == 0) {
-      set_dfe();
-      morse(MR);
+      bool success = set_dfe();
+      morse(success ? MR : MF);
     }
 
     invalidate_display();
   } else if (state.inputs.keyer) {
-    set_dfe();
+    bool success = set_dfe();
     invalidate_display();
-    morse(MR);
+    morse(success ? MR : MF);
     debounce_keyer();
   } else if (state.inputs.rit) {
     state.state = S_DEFAULT;
@@ -562,16 +562,20 @@ void loop_dfe(void)
  * The operating frequency is fixed between the band limits.
  * The system returns to S_DEFAULT state.
  */
-void set_dfe(void)
+bool set_dfe(void)
 {
   if (state.band == BAND_10)
     state.op_freq = (BAND_LIMITS_LOW[state.band] / 1000000000u) * 1000000000u;
   else
     state.op_freq = (BAND_LIMITS_LOW[state.band] / 100000000) * 100000000;
   state.op_freq += dfe_freq * 10000;
+
+  unsigned long tried_op_freq = state.op_freq;
   fix_op_freq(0);
   invalidate_frequencies();
   state.state = S_DEFAULT;
+
+  return tried_op_freq == state.op_freq;
 }
 
 /**
