@@ -538,7 +538,7 @@ void loop_dfe(void)
  */
 void set_dfe(void)
 {
-  state.op_freq = (BAND_LIMITS_LOW[state.band] / 10000000) * 10000000;
+  state.op_freq = (BAND_LIMITS_LOW[state.band] / 100000000) * 100000000;
   state.op_freq += ((unsigned long) dfe_freq) * 10000;
   fix_op_freq(0);
   invalidate_frequencies();
