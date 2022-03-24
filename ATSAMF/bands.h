@@ -171,7 +171,7 @@ const unsigned long BAND_LIMITS_LOW[] =
 const unsigned long BAND_LIMITS_HIGH[] =
   {  47900000
   ,  199999999
-  ,  400000000
+  ,  399999999
   ,  536650000
   ,  730000000
   , 1015000000
