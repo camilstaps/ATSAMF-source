@@ -470,15 +470,22 @@ void loop_change_band(void)
  */
 void setup_dfe(void)
 {
+  unsigned long power;
   dfe_character = 0xff;
-  dfe_position = 3;
   dfe_freq = 0;
 
-  for (unsigned long power = 10000000;
-      (BAND_LIMITS_LOW[state.band] / power) * power == (BAND_LIMITS_HIGH[state.band] / power) * power;
-      power /= 10) {
+  if (state.band == BAND_10) {
+    dfe_position = 4;
+    power = 100000000;
+  } else {
+    dfe_position = 3;
+    power = 10000000;
+  }
+
+  while ((BAND_LIMITS_LOW[state.band] / power) * power == (BAND_LIMITS_HIGH[state.band] / power) * power) {
     dfe_position--;
     dfe_freq += (((BAND_LIMITS_LOW[state.band] / power) % 10) * power) / 10000;
+    power /= 10;
   }
 }
 
@@ -495,7 +502,7 @@ void setup_dfe(void)
 void loop_dfe(void)
 {
   if (dfe_character != 0xff) {
-    unsigned int add;
+    unsigned long add;
     switch (dfe_character) {
       case M0: case MT: add = 0; break;
 #ifdef OPT_OBSCURE_MORSE_ABBREVIATIONS
@@ -557,8 +564,11 @@ void loop_dfe(void)
  */
 void set_dfe(void)
 {
-  state.op_freq = (BAND_LIMITS_LOW[state.band] / 100000000) * 100000000;
-  state.op_freq += ((unsigned long) dfe_freq) * 10000;
+  if (state.band == BAND_10)
+    state.op_freq = (BAND_LIMITS_LOW[state.band] / 1000000000u) * 1000000000u;
+  else
+    state.op_freq = (BAND_LIMITS_LOW[state.band] / 100000000) * 100000000;
+  state.op_freq += dfe_freq * 10000;
   fix_op_freq(0);
   invalidate_frequencies();
   state.state = S_DEFAULT;

@@ -362,18 +362,30 @@ void display_rit(void)
 void display_freq(void)
 {
   unsigned long frequency = TX_FREQ(state)/100;
-  state.display.line_1[0] = '0' + (frequency%1000000) / 100000;
-  state.display.line_1[1] = '0' + (frequency%100000) / 10000;
-  state.display.line_1[2] = '0' + (frequency%10000) / 1000;
-  state.display.line_1[3] = '.';
-  state.display.line_1[4] = '0' + (frequency%1000) / 100;
-  state.display.line_1[5] = '0' + (frequency%100) / 10;
+
+  if (state.band == BAND_10) {
+    state.display.line_1[0] = '0' + (frequency%10000000) / 1000000;
+    state.display.line_1[1] = '0' + (frequency%1000000) / 100000;
+    state.display.line_1[2] = '0' + (frequency%100000) / 10000;
+    state.display.line_1[3] = '0' + (frequency%10000) / 1000;
+    state.display.line_1[4] = '.';
+    state.display.line_1[5] = '0' + (frequency%1000) / 100;
+  } else {
+    state.display.line_1[0] = '0' + (frequency%1000000) / 100000;
+    state.display.line_1[1] = '0' + (frequency%100000) / 10000;
+    state.display.line_1[2] = '0' + (frequency%10000) / 1000;
+    state.display.line_1[3] = '.';
+    state.display.line_1[4] = '0' + (frequency%1000) / 100;
+    state.display.line_1[5] = '0' + (frequency%100) / 10;
+  }
   state.display.line_1[6] = 'k';
   state.display.line_1[7] = 'H';
   state.display.line_1[8] = 'z';
   state.display.line_1[9] = '\0';
 
   state.display.blinking_1 |= tuning_blinks[state.tuning_step];
+  if (state.band == BAND_10)
+    state.display.blinking_1 <<= 1;
 }
 
 /**
@@ -383,20 +395,35 @@ void display_freq(void)
 void display_dfe(void)
 {
   unsigned long frequency = dfe_freq*100;
-  state.display.line_1[0] = '0' + (frequency%1000000) / 100000;
-  state.display.line_1[1] = '0' + (frequency%100000) / 10000;
-  state.display.line_1[2] = '0' + (frequency%10000) / 1000;
-  state.display.line_1[3] = '.';
-  state.display.line_1[4] = '0' + (frequency%1000) / 100;
-  state.display.line_1[5] = '0' + (frequency%100) / 10;
+  if (state.band == BAND_10) {
+    state.display.line_1[0] = '0' + (frequency%10000000) / 1000000;
+    state.display.line_1[1] = '0' + (frequency%1000000) / 100000;
+    state.display.line_1[2] = '0' + (frequency%100000) / 10000;
+    state.display.line_1[3] = '0' + (frequency%10000) / 1000;
+    state.display.line_1[4] = '.';
+    state.display.line_1[5] = '0' + (frequency%1000) / 100;
+  } else {
+    state.display.line_1[0] = '0' + (frequency%1000000) / 100000;
+    state.display.line_1[1] = '0' + (frequency%100000) / 10000;
+    state.display.line_1[2] = '0' + (frequency%10000) / 1000;
+    state.display.line_1[3] = '.';
+    state.display.line_1[4] = '0' + (frequency%1000) / 100;
+    state.display.line_1[5] = '0' + (frequency%100) / 10;
+  }
   state.display.line_1[6] = 'k';
   state.display.line_1[7] = 'H';
   state.display.line_1[8] = 'z';
   state.display.line_1[9] = '\0';
 
-  state.display.blinking_1 = 1 << (3 - dfe_position);
-  if (state.display.blinking_1 == 0x8) // skip the decimal point
-    state.display.blinking_1 = 0x10;
+  if (state.band == BAND_10) {
+    state.display.blinking_1 = 1 << (4 - dfe_position);
+    if (state.display.blinking_1 == 0x10) // skip the decimal point
+      state.display.blinking_1 = 0x20;
+  } else {
+    state.display.blinking_1 = 1 << (3 - dfe_position);
+    if (state.display.blinking_1 == 0x8) // skip the decimal point
+      state.display.blinking_1 = 0x10;
+  }
 
   strcpy(state.display.line_2, "DFE");
 }
