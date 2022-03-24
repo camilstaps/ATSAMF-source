@@ -275,9 +275,7 @@ void loop_default(void)
           invalidate_frequencies();
         }
         state.state = S_DFE;
-        dfe_character = 0xff;
-        dfe_position = 3;
-        dfe_freq = 0;
+        setup_dfe();
       } else {
         morse(MX);
       }
@@ -460,6 +458,27 @@ void loop_change_band(void)
 
     invalidate_display();
     debounce_keyer();
+  }
+}
+
+/**
+ * Sets up the state for S_DFE.
+ * This sets some global variables used in loop_dfe.
+ * By default the user starts to enter the left-most digit (this corresponds to
+ * dfe_position = 3). If some digits are the same in the low and high band,
+ * they are fixed and the dfe_position is decreased.
+ */
+void setup_dfe(void)
+{
+  dfe_character = 0xff;
+  dfe_position = 3;
+  dfe_freq = 0;
+
+  for (unsigned long power = 10000000;
+      (BAND_LIMITS_LOW[state.band] / power) * power == (BAND_LIMITS_HIGH[state.band] / power) * power;
+      power /= 10) {
+    dfe_position--;
+    dfe_freq += (((BAND_LIMITS_LOW[state.band] / power) % 10) * power) / 10000;
   }
 }
 
