@@ -154,6 +154,8 @@ uploading the code to the chip.
 There are several features that can be added to the rig if you want to. This is
 done by adding and removing `#define` lines to `settings.h`.
 
+- `OPT_USER_DEFINED_CHARACTERS`: use user-defined LCD characters for a prettier
+  user interface. This may not be compatible with all displays.
 - `OPT_ERASE_EEPROM`: erase the EEPROM by holding RIT for 11s.
 - `OPT_OBSCURE_MORSE_ABBREVIATIONS`: adds number abbreviations to DFE according
   to the table below. Abbreviations for 0 (T) and 9 (N) are always enabled.

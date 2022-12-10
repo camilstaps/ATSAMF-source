@@ -50,6 +50,9 @@
 
 /* Custom features. For more details, see README.md. */
 
+/* Use user-defined LCD characters (disable for incompatible displays) */
+#define OPT_USER_DEFINED_CHARACTERS
+
 /* Erase EEPROM by pressing RIT for 8s */
 #define OPT_ERASE_EEPROM
 

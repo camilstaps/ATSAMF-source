@@ -30,6 +30,7 @@
 
 static Adafruit_CharacterOLED lcd(OLED_V2, LCD_RS, LCD_RW, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 
+#ifdef OPT_USER_DEFINED_CHARACTERS
 // https://www.quinapalus.com/hd44780udg.html
 static uint8_t character_circ_closed[] = {0x0,0x0,0xe,0x1f,0x1f,0x1f,0xe,0x0};
 static uint8_t character_m[] = {0x0,0x0,0x0,0x1a,0x15,0x15,0x11,0x0};
@@ -38,6 +39,7 @@ static uint8_t character_r[] = {0x0,0x0,0x1c,0x12,0x1c,0x14,0x12,0x0};
 static uint8_t character_w[] = {0x0,0x0,0x0,0x15,0x15,0x15,0x1a,0x0};
 static uint8_t character_arr_l[] = {0x0,0x2,0x6,0xe,0x1e,0xe,0x6,0x2};
 static uint8_t character_arr_r[] = {0x0,0x8,0xc,0xe,0xf,0xe,0xc,0x8};
+#endif
 
 /**
  * Initialize the display: intialize library; show credits; create custom
@@ -51,6 +53,7 @@ void display_init(void)
   lcd.setCursor(0, 1);
   lcd.print("   Rick PA5NN   ");
 
+#ifdef OPT_USER_DEFINED_CHARACTERS
   lcd.createChar(1,character_circ_closed);
   lcd.createChar(2,character_m);
   lcd.createChar(3,character_p);
@@ -58,6 +61,7 @@ void display_init(void)
   lcd.createChar(5,character_w);
   lcd.createChar(6,character_arr_l);
   lcd.createChar(7,character_arr_r);
+#endif
 
   state.display.line_1[0]='\0';
   state.display.line_2[0]='\0';
@@ -173,9 +177,15 @@ void invalidate_display(void)
         if (state.key.speed >= 10)
           state.display.line_2[i++] = '0' + state.key.speed / 10;
         state.display.line_2[i++] = '0' + state.key.speed % 10;
+#ifdef OPT_USER_DEFINED_CHARACTERS
         state.display.line_2[i++] = '\5';
         state.display.line_2[i++] = '\3';
         state.display.line_2[i++] = '\2';
+#else
+        state.display.line_2[i++] = 'w';
+        state.display.line_2[i++] = 'p';
+        state.display.line_2[i++] = 'm';
+#endif
         state.display.line_2[i++] = '\0';
       }
       break;
@@ -189,15 +199,27 @@ void invalidate_display(void)
     case S_TUNE:
       strcpy(state.display.line_2, "Tune mode      o");
       if (state.tune_mode_on)
+#ifdef OPT_USER_DEFINED_CHARACTERS
         state.display.line_2[15] = '\1';
+#else
+        state.display.line_2[15] = '-';
+#endif
       break;
     case S_CHANGE_BAND:
     case S_CALIBRATION_CHANGE_BAND:
-      strcpy(state.display.line_2, "Band: \xf7");
+#ifdef OPT_USER_DEFINED_CHARACTERS
+      strcpy(state.display.line_2, "Band: \7");
+#else
+      strcpy(state.display.line_2, "Band: <");
+#endif
       display_band(7);
       if (!state.display.line_2[10])
         state.display.line_2[10] = ' ';
-      state.display.line_2[11] = '\xf6';
+#ifdef OPT_USER_DEFINED_CHARACTERS
+      state.display.line_2[11] = '\6';
+#else
+      state.display.line_2[11] = '>';
+#endif
       state.display.line_2[12] = '\0';
       break;
     case S_DFE:
@@ -208,15 +230,27 @@ void invalidate_display(void)
       strcpy(state.display.line_2, "Enter memory");
       break;
     case S_MEM_ENTER_REVIEW:
-      strcpy(state.display.line_2, "Store mem? \xf7..\xf6");
+#ifdef OPT_USER_DEFINED_CHARACTERS
+      strcpy(state.display.line_2, "Store mem? \7..\6");
+#else
+      strcpy(state.display.line_2, "Store mem? <..>");
+#endif
       state.display.line_2[12] = '0' + (memory_index + 1) / 10;
       state.display.line_2[13] = '0' + (memory_index + 1) % 10;
       break;
     case S_MEM_SEND_WAIT:
       if (state.beacon)
-        strcpy(state.display.line_2, "Beacon \xf7..\xf6");
+#ifdef OPT_USER_DEFINED_CHARACTERS
+        strcpy(state.display.line_2, "Beacon \7..\6");
+#else
+        strcpy(state.display.line_2, "Beacon <..>");
+#endif
       else
-        strcpy(state.display.line_2, "Memory \xf7..\xf6");
+#ifdef OPT_USER_DEFINED_CHARACTERS
+        strcpy(state.display.line_2, "Memory \7..\6");
+#else
+        strcpy(state.display.line_2, "Memory <..>");
+#endif
       state.display.line_2[8] = '0' + (memory_index + 1) / 10;
       state.display.line_2[9] = '0' + (memory_index + 1) % 10;
       break;
@@ -255,7 +289,11 @@ void invalidate_display(void)
 void display_flash_circle(uint8_t type)
 {
   lcd.setCursor(15,1);
+#ifdef OPT_USER_DEFINED_CHARACTERS
   lcd.print(type ? '\1' : 'o');
+#else
+  lcd.print(type ? '#' : 'o');
+#endif
   delay(100);
   lcd.setCursor(15,1);
   lcd.print(' ');
@@ -333,10 +371,18 @@ void display_delay(short millis)
  */
 void display_cs(void)
 {
+#ifdef OPT_USER_DEFINED_CHARACTERS
   state.display.line_2[0] = '\6';
+#else
+  state.display.line_2[0] = '<';
+#endif
   state.display.line_2[1] = state.key.speed >= 10 ? ('0' + state.key.speed / 10) : ' ';
   state.display.line_2[2] = '0' + state.key.speed % 10;
+#ifdef OPT_USER_DEFINED_CHARACTERS
   strcpy(&state.display.line_2[3], "\7 \5\3\2");
+#else
+  strcpy(&state.display.line_2[3], "> wpm");
+#endif
 }
 
 /**
@@ -351,7 +397,11 @@ void display_rit(void)
     return;
 
   state.display.line_1[9] = ' ';
+#ifdef OPT_USER_DEFINED_CHARACTERS
   state.display.line_1[10] = '\4';
+#else
+  state.display.line_1[10] = 'R';
+#endif
 
   if (state.rit_tx_freq > state.op_freq) {
     offset = state.rit_tx_freq - state.op_freq;
